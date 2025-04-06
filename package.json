@@ -1,0 +1,31 @@
+{
+	"name": "yfinance-mcp-server",
+	"version": "0.0.1",
+	"description": "yahoo finance api mcp server",
+	"main": "index.js",
+	"bin": {
+		"yfinance": "./build/index.js"
+	},
+	"scripts": {
+		"dev": "tsx --watch ./src/index.ts",
+		"build": "tsc && chmod 755 build/index.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "module",
+	"files": [
+		"build"
+	],
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.8.0",
+		"yahoo-finance2": "^2.13.3",
+		"zod": "^3.24.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/node": "^22.14.0",
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.3"
+	}
+}
