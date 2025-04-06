@@ -1,17 +1,23 @@
 {
 	"name": "yfinance-mcp-server",
 	"version": "0.0.1",
-	"description": "yahoo finance api mcp server",
-	"main": "index.js",
+	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
+	"main": "build/index.js",
 	"bin": {
-		"yfinance": "./build/index.js"
+		"yfinance": "build/index.js"
 	},
 	"scripts": {
 		"dev": "tsx --watch ./src/index.ts",
 		"build": "tsc && chmod 755 build/index.js"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": [
+		"yahoo-finance",
+		"mcp",
+		"model-context-protocol",
+		"finance",
+		"stock"
+	],
+	"author": "onori",
 	"license": "ISC",
 	"type": "module",
 	"files": [
