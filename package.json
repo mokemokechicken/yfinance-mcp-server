@@ -4,11 +4,15 @@
 	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
 	"main": "build/index.js",
 	"bin": {
-		"yfinance": "build/index.js"
+		"yfinance-mcp-server": "build/index.js"
 	},
 	"scripts": {
 		"dev": "tsx --watch ./src/index.ts",
 		"build": "tsc && chmod 755 build/index.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/onori/yfinance-mcp-server.git"
 	},
 	"keywords": [
 		"yahoo-finance",
