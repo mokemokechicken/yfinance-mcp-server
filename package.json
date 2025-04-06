@@ -1,5 +1,5 @@
 {
-	"name": "yfinance-mcp-server",
+	"name": "@onori/yfinance-mcp-server",
 	"version": "0.0.1",
 	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
 	"main": "build/index.js",
@@ -20,9 +20,7 @@
 	"author": "onori",
 	"license": "ISC",
 	"type": "module",
-	"files": [
-		"build"
-	],
+	"files": ["build"],
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.8.0",
 		"yahoo-finance2": "^2.13.3",
