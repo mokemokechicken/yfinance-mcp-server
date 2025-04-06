@@ -1,5 +1,7 @@
 # yfinance-mcp-server
 
+[日本語版](./README-ja.md)
+
 **Important Note: This is an unofficial MCP server.**
 
 A Message Control Protocol (MCP) server for accessing Yahoo Finance data. This server provides a simple interface to retrieve stock market data through yfinance.
