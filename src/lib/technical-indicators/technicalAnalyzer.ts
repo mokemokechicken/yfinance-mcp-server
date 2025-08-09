@@ -82,27 +82,27 @@ export class TechnicalAnalyzer {
 		period = "1y",
 	): Promise<PriceData[]> {
 		try {
-			const result = await yahooFinance.historical(symbol, {
+			const result = await yahooFinance.chart(symbol, {
 				period1: TechnicalAnalyzer.getPeriodStartDate(period),
 				period2: new Date(),
 				interval: "1d",
 			});
 
-			if (!result || result.length === 0) {
+			if (!result || !result.quotes || result.quotes.length === 0) {
 				throw new DataFetchError(
 					`No data found for symbol: ${symbol}`,
 					"NO_DATA_FOUND",
 				);
 			}
 
-			// Yahoo Finance形式を内部形式に変換
-			const rawData = result.map((item) => ({
+			// Yahoo Finance chart API形式を内部形式に変換
+			const rawData = result.quotes.map((item) => ({
 				date: item.date,
-				open: item.open,
-				high: item.high,
-				low: item.low,
-				close: item.close,
-				volume: item.volume,
+				open: item.open ?? 0,
+				high: item.high ?? 0,
+				low: item.low ?? 0,
+				close: item.close ?? 0,
+				volume: item.volume ?? 0,
 			}));
 
 			return DataProcessor.processRawData(rawData);

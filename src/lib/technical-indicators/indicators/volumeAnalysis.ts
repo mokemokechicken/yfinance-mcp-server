@@ -216,11 +216,11 @@ export class VolumeAnalysisCalculator {
 
 			let binVolume = 0;
 			
-			priceData.forEach(data => {
+			for (const data of priceData) {
 				if (data.close >= lowerBound && data.close < upperBound) {
 					binVolume += data.volume;
 				}
-			});
+			}
 
 			const percentage = totalVolume > 0 ? binVolume / totalVolume : 0;
 			
@@ -281,7 +281,7 @@ export class VolumeAnalysisCalculator {
 		let cmfSum = 0;
 		let volumeSum = 0;
 
-		recentData.forEach(data => {
+		for (const data of recentData) {
 			const { high, low, close, volume } = data;
 			
 			// マネーフロー倍数の計算
@@ -294,7 +294,7 @@ export class VolumeAnalysisCalculator {
 			
 			cmfSum += moneyFlowVolume;
 			volumeSum += volume;
-		});
+		}
 
 		return volumeSum > 0 
 			? Calculator.round(cmfSum / volumeSum, 4)
@@ -308,11 +308,11 @@ export class VolumeAnalysisCalculator {
 		let totalVolumePrice = 0;
 		let totalVolume = 0;
 
-		priceData.forEach(data => {
+		for (const data of priceData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			totalVolumePrice += typicalPrice * data.volume;
 			totalVolume += data.volume;
-		});
+		}
 
 		return totalVolume > 0 
 			? Calculator.round(totalVolumePrice / totalVolume, 2)

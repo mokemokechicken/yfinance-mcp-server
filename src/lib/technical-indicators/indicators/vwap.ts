@@ -31,7 +31,7 @@ export class VWAPCalculator {
 		const volumePrices: number[] = [];
 		const volumes: number[] = [];
 
-		priceData.forEach(data => {
+		for (const data of priceData) {
 			// 代表価格（Typical Price）の計算
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			const volumePrice = typicalPrice * data.volume;
@@ -41,7 +41,7 @@ export class VWAPCalculator {
 			
 			volumePrices.push(volumePrice);
 			volumes.push(data.volume);
-		});
+		}
 
 		if (totalVolume === 0) {
 			throw new CalculationError(
@@ -96,7 +96,7 @@ export class VWAPCalculator {
 		let cumulativeVolumePrice = 0;
 		let cumulativeVolume = 0;
 
-		priceData.forEach(data => {
+		for (const data of priceData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			cumulativeVolumePrice += typicalPrice * data.volume;
 			cumulativeVolume += data.volume;
@@ -106,7 +106,7 @@ export class VWAPCalculator {
 				: typicalPrice;
 			
 			vwapArray.push(Calculator.round(vwap, 2));
-		});
+		}
 
 		return vwapArray;
 	}
@@ -126,11 +126,11 @@ export class VWAPCalculator {
 			let totalVolumePrice = 0;
 			let totalVolume = 0;
 			
-			periodData.forEach(data => {
+			for (const data of periodData) {
 				const typicalPrice = (data.high + data.low + data.close) / 3;
 				totalVolumePrice += typicalPrice * data.volume;
 				totalVolume += data.volume;
-			});
+			}
 			
 			const vwap = totalVolume > 0 
 				? totalVolumePrice / totalVolume 
@@ -150,11 +150,11 @@ export class VWAPCalculator {
 	): number {
 		let varianceSum = 0;
 
-		priceData.forEach(data => {
+		for (const data of priceData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			const priceDiff = typicalPrice - vwap;
 			varianceSum += (priceDiff * priceDiff) * data.volume;
-		});
+		}
 
 		const variance = varianceSum / totalVolume;
 		return Math.sqrt(variance);
@@ -171,14 +171,14 @@ export class VWAPCalculator {
 		let consistentDirection = 0;
 
 		// 価格がVWAPに対して一貫した方向にあるかチェック
-		recentPrices.forEach(data => {
+		for (const data of recentPrices) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			if (typicalPrice > vwap) {
 				consistentDirection += 1;
 			} else if (typicalPrice < vwap) {
 				consistentDirection -= 1;
 			}
-		});
+		}
 
 		const consistency = Math.abs(consistentDirection) / recentPrices.length;
 		
@@ -201,11 +201,11 @@ export class VWAPCalculator {
 		let totalVolumePrice = 0;
 		let totalVolume = 0;
 		
-		earlierData.forEach(data => {
+		for (const data of earlierData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			totalVolumePrice += typicalPrice * data.volume;
 			totalVolume += data.volume;
-		});
+		}
 		
 		const earlierVWAP = totalVolume > 0 ? totalVolumePrice / totalVolume : currentVWAP;
 		
@@ -235,9 +235,8 @@ export class VWAPCalculator {
 		if (touchCount >= 2) {
 			if (currentPrice > vwap) {
 				return "support"; // サポートとして機能
-			} else {
-				return "resistance"; // レジスタンスとして機能
 			}
+			return "resistance"; // レジスタンスとして機能
 		}
 
 		return "neutral";
@@ -291,9 +290,8 @@ export class VWAPCalculator {
 		if (deviationFromVWAP > reversionThreshold) {
 			if (currentPrice > vwapResult.vwap) {
 				return "sell_reversion"; // 高すぎるので売り
-			} else {
-				return "buy_reversion"; // 安すぎるので買い
 			}
+			return "buy_reversion"; // 安すぎるので買い
 		}
 
 		return "none";
@@ -321,12 +319,12 @@ export class VWAPCalculator {
 		let totalVolumeWeightedDeviation = 0;
 		let totalVolume = 0;
 
-		priceData.forEach(data => {
+		for (const data of priceData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			const deviation = Math.abs(typicalPrice - vwap);
 			totalVolumeWeightedDeviation += deviation * data.volume;
 			totalVolume += data.volume;
-		});
+		}
 
 		const avgWeightedDeviation = totalVolume > 0 
 			? totalVolumeWeightedDeviation / totalVolume 

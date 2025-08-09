@@ -61,7 +61,7 @@ export class CrossDetectionCalculator {
 
 		// クロス検出
 		let crossType: "golden_cross" | "dead_cross" | "none" = "none";
-		let crossPoint = prices[prices.length - 1];
+		const crossPoint = prices[prices.length - 1];
 
 		// ゴールデンクロス: 短期線が長期線を下から上に突破
 		if (previousShort <= previousLong && currentShort > currentLong) {
@@ -265,13 +265,13 @@ export class CrossDetectionCalculator {
 		let bullishCount = 0;
 		let bearishCount = 0;
 
-		[shortTerm, mediumTerm, longTerm].forEach(result => {
+		for (const result of [shortTerm, mediumTerm, longTerm]) {
 			if (result.type === "golden_cross" || result.shortMA > result.longMA) {
 				bullishCount++;
 			} else if (result.type === "dead_cross" || result.shortMA < result.longMA) {
 				bearishCount++;
 			}
-		});
+		}
 
 		let consensus: "bullish" | "bearish" | "mixed" | "neutral";
 		if (bullishCount >= 2 && bearishCount === 0) consensus = "bullish";

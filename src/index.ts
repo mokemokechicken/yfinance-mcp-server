@@ -26,13 +26,13 @@ server.tool(
 				interval: interval as "1d" | "1wk" | "1mo",
 			};
 
-			const result = await yahooFinance.historical(symbol, queryOptions);
+			const result = await yahooFinance.chart(symbol, queryOptions);
 
 			return {
 				content: [
 					{
 						type: "text",
-						text: JSON.stringify(result, null, 2),
+						text: JSON.stringify(result.quotes, null, 2),
 					},
 				],
 			};
