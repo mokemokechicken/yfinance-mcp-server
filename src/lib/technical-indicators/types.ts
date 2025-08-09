@@ -1,3 +1,15 @@
+import type {
+	FinancialMetricsResult,
+	MovingAverageDeviationResult,
+	RSIExtendedResult,
+} from "./financial-indicators/types";
+// インポート
+import type { BollingerBandsResult } from "./indicators/bollingerBands";
+import type { CrossDetectionResult } from "./indicators/crossDetection";
+import type { StochasticResult } from "./indicators/stochastic";
+import type { VolumeAnalysisResult } from "./indicators/volumeAnalysis";
+import type { VWAPResult } from "./indicators/vwap";
+
 // 価格データの型
 export interface PriceData {
 	date: Date;
@@ -82,21 +94,21 @@ export interface IndicatorConfig {
 // 拡張指標結果型（spike_all_features.ts の全機能対応）
 export interface ExtendedIndicatorsResult {
 	// Phase2 拡張指標
-	bollingerBands: import("./indicators/bollingerBands").BollingerBandsResult;
-	stochastic: import("./indicators/stochastic").StochasticResult;
-	crossDetection: import("./indicators/crossDetection").CrossDetectionResult;
-	volumeAnalysis: import("./indicators/volumeAnalysis").VolumeAnalysisResult;
-	vwap: import("./indicators/vwap").VWAPResult;
+	bollingerBands: BollingerBandsResult;
+	stochastic: StochasticResult;
+	crossDetection: CrossDetectionResult;
+	volumeAnalysis: VolumeAnalysisResult;
+	vwap: VWAPResult;
 
 	// Phase3 財務拡張指標
-	rsiExtended: import("./financial-indicators/types").RSIExtendedResult;
-	movingAverageDeviations: import("./financial-indicators/types").MovingAverageDeviationResult[];
+	rsiExtended: RSIExtendedResult;
+	movingAverageDeviations: MovingAverageDeviationResult[];
 }
 
 // 包括的分析結果型
 export interface ComprehensiveStockAnalysisResult extends StockAnalysisResult {
 	// 財務指標
-	financialMetrics: import("./financial-indicators/types").FinancialMetricsResult | null;
+	financialMetrics: FinancialMetricsResult | null;
 
 	// 拡張テクニカル指標
 	extendedIndicators: ExtendedIndicatorsResult;
