@@ -25,6 +25,21 @@
 			}
 		}
 	},
+	"overrides": [
+		{
+			"include": ["tests/**/*"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noExplicitAny": "off"
+					},
+					"complexity": {
+						"noForEach": "off"
+					}
+				}
+			}
+		}
+	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"
