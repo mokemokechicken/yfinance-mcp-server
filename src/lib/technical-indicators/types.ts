@@ -112,4 +112,7 @@ export interface ComprehensiveStockAnalysisResult extends StockAnalysisResult {
 
 	// 拡張テクニカル指標
 	extendedIndicators: ExtendedIndicatorsResult;
+
+	// 価格推移データ（レポート生成用）
+	priceHistoryData: PriceData[];
 }
