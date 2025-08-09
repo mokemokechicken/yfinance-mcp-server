@@ -31,6 +31,37 @@ describe("MovingAverageCalculator", () => {
 
 			assert.strictEqual(result, 4); // (2+4+6)/3 = 4
 		});
+
+		// 新しいエラーケーステスト
+		it("無効な期間でエラーを投げる", () => {
+			const prices = [1, 2, 3, 4, 5];
+			assert.throws(() => {
+				MovingAverageCalculator.calculate(prices, 0);
+			}, {
+				name: 'CalculationError',
+				message: /period must be a positive integer/
+			});
+		});
+
+		it("非整数の期間でエラーを投げる", () => {
+			const prices = [1, 2, 3, 4, 5];
+			assert.throws(() => {
+				MovingAverageCalculator.calculate(prices, 2.5);
+			}, {
+				name: 'CalculationError',
+				message: /period must be a positive integer/
+			});
+		});
+
+		it("価格に無限大が含まれる場合エラーを投げる", () => {
+			const prices = [1, 2, Infinity, 4, 5];
+			assert.throws(() => {
+				MovingAverageCalculator.calculate(prices, 3);
+			}, {
+				name: 'CalculationError',
+				message: /Invalid price at index 2/
+			});
+		});
 	});
 
 	describe("calculateMultiplePeriods", () => {

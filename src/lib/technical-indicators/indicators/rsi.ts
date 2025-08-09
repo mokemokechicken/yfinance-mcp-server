@@ -1,32 +1,33 @@
 import { CalculationError } from "../types";
 import { Calculator } from "../utils/calculator";
+import { ValidationUtils } from "../utils/validation";
 
 export class RSICalculator {
-	// RSI計算のメインメソッド（ウォームアップ期間を考慮）
+	// RSI計算のメインメソッド（ウォームアップ期間を考慮、強化版）
 	public static calculate(
 		prices: number[],
 		period = 14,
 		warmupPeriod = 100,
 	): number {
-		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
-		}
+		// 入力検証（強化版）
+		ValidationUtils.validatePricesArray(prices);
+		ValidationUtils.validatePeriod(period, "period");
+		ValidationUtils.validatePeriod(warmupPeriod, "warmupPeriod");
 
-		const requiredLength = period + warmupPeriod + 1;
-		if (prices.length < requiredLength) {
-			throw new CalculationError(
-				`Not enough data points for accurate RSI. Need ${requiredLength}, got ${prices.length}`,
-				"INSUFFICIENT_DATA",
-			);
-		}
+		// warmupPeriod < period の場合の調整
+		const effectiveWarmup = Math.max(warmupPeriod, period);
+		
+		const requiredLength = period + effectiveWarmup + 1;
+		ValidationUtils.validateDataLength(
+			prices.length,
+			requiredLength,
+			"price data for accurate RSI"
+		);
 
 		// ウォームアップ期間を考慮した価格データを使用
 		const warmupStartIndex = Math.max(
 			0,
-			prices.length - period - warmupPeriod - 1,
+			prices.length - period - effectiveWarmup - 1,
 		);
 		const effectivePrices = prices.slice(warmupStartIndex);
 
@@ -56,7 +57,11 @@ export class RSICalculator {
 			avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
 		}
 
-		// RSの計算
+		// エッジケースの拡張処理
+		if (avgGain === 0 && avgLoss === 0) {
+			return 50; // 変化なしの場合は中立値
+		}
+		
 		if (avgLoss === 0) {
 			return 100; // 下落がない場合RSI = 100
 		}

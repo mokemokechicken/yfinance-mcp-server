@@ -266,7 +266,7 @@ export class MACDCalculator {
 	public static getStrength(
 		macdResult: MACDResult,
 	): "strong" | "moderate" | "weak" {
-		const { macd, signal, histogram } = macdResult;
+		const { macd, histogram } = macdResult;
 
 		const macdAbs = Math.abs(macd);
 		const histogramAbs = Math.abs(histogram);

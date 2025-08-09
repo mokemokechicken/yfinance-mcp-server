@@ -1,22 +1,14 @@
 import { CalculationError } from "../types";
 import { Calculator } from "../utils/calculator";
+import { ValidationUtils } from "../utils/validation";
 
 export class MovingAverageCalculator {
-	// シンプル移動平均の計算
+	// シンプル移動平均の計算（統一バリデーション）
 	public static calculate(prices: number[], period: number): number {
-		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
-		}
-
-		if (prices.length < period) {
-			throw new CalculationError(
-				`Not enough data points. Need ${period}, got ${prices.length}`,
-				"INSUFFICIENT_DATA",
-			);
-		}
+		// 入力検証（統一）
+		ValidationUtils.validatePricesArray(prices);
+		ValidationUtils.validatePeriod(period);
+		ValidationUtils.validateDataLength(prices.length, period, "price data");
 
 		// 最後のperiod分のデータを使用
 		const recentPrices = Calculator.lastN(prices, period);
@@ -47,34 +39,22 @@ export class MovingAverageCalculator {
 		return result;
 	}
 
-	// 指数移動平均の計算（将来拡張用）
+	// 指数移動平均の計算（統一バリデーション）
 	public static calculateEMA(prices: number[], period: number): number {
-		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
-		}
-
-		if (prices.length < period) {
-			throw new CalculationError(
-				`Not enough data points. Need ${period}, got ${prices.length}`,
-				"INSUFFICIENT_DATA",
-			);
-		}
+		// 入力検証（統一）- Calculator内部で既に実行されるが明示的に行う
+		ValidationUtils.validatePricesArray(prices);
+		ValidationUtils.validatePeriod(period);
+		ValidationUtils.validateDataLength(prices.length, period, "price data");
 
 		const emaValues = Calculator.exponentialMovingAverage(prices, period);
 		return Calculator.round(emaValues[emaValues.length - 1], 3);
 	}
 
-	// 移動平均の配列を計算（全期間）
+	// 移動平均の配列を計算（全期間、統一バリデーション）
 	public static calculateArray(prices: number[], period: number): number[] {
-		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
-		}
+		// 入力検証（統一）- Calculator内部で既に実行されるが明示的に行う
+		ValidationUtils.validatePricesArray(prices);
+		ValidationUtils.validatePeriod(period);
 
 		if (prices.length < period) {
 			return [];

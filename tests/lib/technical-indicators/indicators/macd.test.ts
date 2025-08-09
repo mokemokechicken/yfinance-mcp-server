@@ -45,6 +45,45 @@ describe("MACDCalculator", () => {
 				MACDCalculator.calculate(shortData);
 			}, CalculationError);
 		});
+
+		// 新しいエラーケーステスト
+		it("逆転した期間関係でエラーを投げる", () => {
+			assert.throws(() => {
+				MACDCalculator.calculate(longPricesData, 26, 12, 9); // fastPeriod > slowPeriod
+			}, {
+				name: 'CalculationError',
+				message: /Slow period \(12\) must be greater than fast period \(26\)/
+			});
+		});
+
+		it("無効なシグナル期間でエラーを投げる", () => {
+			assert.throws(() => {
+				MACDCalculator.calculate(longPricesData, 12, 26, 0);
+			}, {
+				name: 'CalculationError',
+				message: /signalPeriod must be a positive integer/
+			});
+		});
+
+		it("配列以外の入力でエラーを投げる", () => {
+			assert.throws(() => {
+				MACDCalculator.calculate("invalid" as any);
+			}, {
+				name: 'CalculationError',
+				message: /Prices must be an array/
+			});
+		});
+
+		it("無限大を含む価格でエラーを投げる", () => {
+			const pricesWithInfinity = [...longPricesData];
+			pricesWithInfinity[10] = Infinity;
+			assert.throws(() => {
+				MACDCalculator.calculate(pricesWithInfinity);
+			}, {
+				name: 'CalculationError',
+				message: /Invalid price at index 10/
+			});
+		});
 	});
 
 	describe("calculateArray", () => {

@@ -37,6 +37,44 @@ describe("RSICalculator", () => {
 
 			assert.strictEqual(result, 100);
 		});
+
+		// 新しいエラーケーステスト
+		it("無効なperiodでエラーを投げる", () => {
+			const prices = new Array(120).fill(0).map((_, i) => 100 + i);
+			assert.throws(() => {
+				RSICalculator.calculate(prices, 0);
+			}, {
+				name: 'CalculationError',
+				message: /period must be a positive integer/
+			});
+		});
+
+		it("無効なwarmupPeriodでエラーを投げる", () => {
+			const prices = new Array(120).fill(0).map((_, i) => 100 + i);
+			assert.throws(() => {
+				RSICalculator.calculate(prices, 14, -10);
+			}, {
+				name: 'CalculationError',
+				message: /warmupPeriod must be a positive integer/
+			});
+		});
+
+		it("価格に非有限値が含まれる場合エラーを投げる", () => {
+			const prices = new Array(120).fill(0).map((_, i) => 100 + i);
+			prices[50] = Number.NaN;
+			assert.throws(() => {
+				RSICalculator.calculate(prices, 14);
+			}, {
+				name: 'CalculationError',
+				message: /Invalid price at index 50/
+			});
+		});
+
+		it("価格が変動しない場合RSI=50を返す", () => {
+			const prices = new Array(120).fill(100); // 全て同じ価格
+			const result = RSICalculator.calculate(prices, 14);
+			assert.strictEqual(result, 50);
+		});
 	});
 
 	describe("calculateMultiplePeriods", () => {
