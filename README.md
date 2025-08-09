@@ -4,69 +4,83 @@
 
 **Important Note: This is an unofficial MCP server.**
 
-A Message Control Protocol (MCP) server for accessing Yahoo Finance data. This server provides a simple interface to retrieve stock market data through yfinance.
+A Model Context Protocol (MCP) server for accessing Yahoo Finance data with comprehensive technical analysis features. This server provides AI-friendly structured stock analysis through Yahoo Finance API.
 
 **This project is based on [onori/yfinance-mcp-server](https://github.com/onori/yfinance-mcp-server) and has been enhanced with comprehensive technical analysis features.**
 
 ## Features
 
-- Get historical stock data with customizable periods and intervals
-- Easy to use with any MCP client
-- Built with TypeScript for type safety and better developer experience
+- **Comprehensive Stock Analysis**: Get detailed financial metrics, technical indicators, and AI-friendly Japanese reports
+- **Technical Indicators**: RSI, MACD, Bollinger Bands, Stochastic, Moving Averages, VWAP, Volume Analysis
+- **Financial Metrics**: Market cap, P/E ratio, P/B ratio, ROE, EPS growth, dividend yield
+- **Multi-Market Support**: US stocks (AAPL), Japanese stocks (7203.T), crypto (BTC-USD), forex (EURUSD=X)
+- **AI-Optimized Output**: Structured Japanese reports with emojis for better AI understanding
+- **Performance Optimized**: Maximum 2 API calls with comprehensive local calculations
 
-## Usage
+## Installation
 
-Example Cursor MCP Client.
+### Claude Code MCP Configuration
+
+Use the Claude Code CLI to add the MCP server:
+
+```bash
+claude mcp add yfinance npx @mokemokechicken/yfinance-mcp-server
+```
+
+Or manually add to your Claude Code MCP settings:
 
 ```json
 {
   "mcpServers": {
     "yfinance": {
       "command": "npx",
-      "args": [
-        "@mokemokechicken/yfinance-mcp-server"
-      ]
+      "args": ["@mokemokechicken/yfinance-mcp-server"]
     }
   }
 }
 ```
 
-### getStockHistory
+### Other MCP Clients (Cursor, etc.)
 
-Retrieves historical stock data for a given symbol.
+```json
+{
+  "mcpServers": {
+    "yfinance": {
+      "command": "npx",
+      "args": ["@mokemokechicken/yfinance-mcp-server"]
+    }
+  }
+}
+```
 
-Parameters:
-- `symbol` (required): The stock symbol (e.g., "AAPL" for Apple Inc.)
-- `period` (required): Time period to fetch data for (e.g., "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max")
-- `interval` (optional): Data interval ("1d", "1wk", "1mo")
+## Available Tool
 
-Example MCP request:
+### getStockAnalysis
+
+Performs comprehensive stock analysis with technical indicators and financial metrics.
+
+**Parameters:**
+- `symbol` (required): Stock symbol 
+  - US stocks: `AAPL`, `GOOGL`, `MSFT`
+  - Japanese stocks: `7203.T`, `6301.T`, `9984.T`
+  - Crypto: `BTC-USD`, `ETH-USD`
+  - Forex: `EURUSD=X`, `USDJPY=X`
+- `days` (optional): Number of days for recent price data display (default: 7, range: 1-365)
+
+**Example Usage:**
 
 ```markdown
-> (Request) 
-Please use the `getStockHistory` tool to fetch the daily stock data for AAPL for the past week (`period`='1w', `interval`='1d'). Then, render the results as a markdown table.
+> Please analyze Apple stock (AAPL) for the last 5 days
 
-> (Response Example)
-I'll help you fetch Apple's stock data and format it nicely as a markdown table.
-First, I'll call the getStockHistory tool to fetch the data:
-
-Let me format this data into a more readable markdown table:
-
-| Date | Open | High | Low | Close | Volume |
-|------|------|------|-----|-------|---------|
-| Mar 31, 2025 | $217.01 | $225.62 | $216.23 | $222.13 | 65.30M |
-| Apr 1, 2025 | $219.81 | $223.68 | $218.90 | $223.19 | 36.41M |
-| Apr 2, 2025 | $221.32 | $225.19 | $221.02 | $223.89 | 35.91M |
-| Apr 3, 2025 | $205.54 | $207.49 | $201.25 | $203.19 | 103.42M |
-| Apr 4, 2025 | $193.89 | $199.88 | $187.34 | $188.38 | 125.57M |
-
-Some notable observations from this data:
-- The stock showed significant volatility over this period
-- There was a sharp decline in the last two trading days
-- Trading volume increased substantially during the declining days, with the highest volume (125.57M shares) on April 4th
-- The stock price range was from a high of $225.62 to a low of $187.34 during this period
-Would you like any specific analysis of this data or would you like to see different metrics?
+> Analyze Toyota Motors (7203.T) with default 7-day period
 ```
+
+**Response includes:**
+- 📊 Recent stock price data
+- 💰 Financial metrics (market cap, P/E, ROE, etc.)
+- 📈 Technical indicators (RSI, MACD, Bollinger Bands, etc.)
+- 🎯 Trading signals and trend analysis
+- 📋 AI-friendly structured Japanese report
 
 ## Development
 
@@ -81,10 +95,6 @@ npm install
 ```bash
 npm run dev
 ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
