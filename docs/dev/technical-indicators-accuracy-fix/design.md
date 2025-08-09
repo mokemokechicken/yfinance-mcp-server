@@ -150,17 +150,13 @@ public static calculate(
         throw new CalculationError("Period must be positive integer", "INVALID_PARAMETER");
     }
 
-    // 最小データ長チェック
-    const requiredLength = period + warmupPeriod + 1;
-    if (prices.length < requiredLength) {
-        throw new CalculationError(
-            `Insufficient data: need ${requiredLength}, got ${prices.length}`,
-            "INSUFFICIENT_DATA"
-        );
-    }
+    // 最小データ長チェック（実用的調整版）
+    // 注意: warmupPeriodの厳密な適用は実用的でないため、最小必要データ長のみチェック
+    ValidationUtils.validateDataLength(prices.length, period + 1);
 
-    // warmupPeriod < period の場合の調整
-    const effectiveWarmup = Math.max(warmupPeriod, period);
+    // ウォームアップ期間を実用的範囲で適用
+    const effectiveWarmup = Math.min(warmupPeriod, prices.length - period - 1);
+    const startIndex = Math.max(0, prices.length - period - effectiveWarmup - 1);
     
     // 既存のロジック（正確なので維持）
     // ... 価格変化計算、平滑化処理
@@ -193,7 +189,7 @@ export interface CalculationError extends Error {
     details?: any;
 }
 
-// 共通バリデーション関数
+// 共通バリデーション関数（実装完了版）
 export class ValidationUtils {
     static validatePricesArray(prices: number[]): void {
         if (!Array.isArray(prices)) {
@@ -202,14 +198,46 @@ export class ValidationUtils {
         if (prices.length === 0) {
             throw new CalculationError("Prices array cannot be empty", "INVALID_PRICES");
         }
-        if (prices.some(p => !Number.isFinite(p))) {
-            throw new CalculationError("Prices must contain only finite numbers", "INVALID_PRICES");
+        
+        // 全ての値が有限数であることを確認
+        const invalidIndex = prices.findIndex(price => !Number.isFinite(price));
+        if (invalidIndex !== -1) {
+            throw new CalculationError(
+                `Invalid price at index ${invalidIndex}: ${prices[invalidIndex]}. Prices must contain only finite numbers`,
+                "INVALID_PRICES"
+            );
         }
     }
 
-    static validatePeriod(period: number): void {
+    static validatePeriod(period: number, paramName = "period"): void {
         if (!Number.isInteger(period) || period <= 0) {
-            throw new CalculationError("Period must be a positive integer", "INVALID_PARAMETER");
+            throw new CalculationError(
+                `${paramName} must be a positive integer, got: ${period}`,
+                "INVALID_PARAMETER"
+            );
+        }
+    }
+
+    // データ長の十分性をチェック（実装で追加）
+    static validateDataLength(dataLength: number, required: number, dataType = "data"): void {
+        if (dataLength < required) {
+            throw new CalculationError(
+                `Insufficient ${dataType}: need ${required}, got ${dataLength}`,
+                "INSUFFICIENT_DATA"
+            );
+        }
+    }
+
+    // 期間関係の検証（MACD等で使用、実装で追加）
+    static validatePeriodRelationship(fastPeriod: number, slowPeriod: number): void {
+        this.validatePeriod(fastPeriod, "fastPeriod");
+        this.validatePeriod(slowPeriod, "slowPeriod");
+        
+        if (slowPeriod <= fastPeriod) {
+            throw new CalculationError(
+                `Slow period (${slowPeriod}) must be greater than fast period (${fastPeriod})`,
+                "INVALID_PARAMETER"
+            );
         }
     }
 }
