@@ -79,7 +79,7 @@ export class TechnicalAnalyzer {
 	// Yahoo Finance APIからのデータ取得
 	public static async fetchData(
 		symbol: string,
-		period = "1y",
+		period = "2y",
 	): Promise<PriceData[]> {
 		try {
 			const result = await yahooFinance.chart(symbol, {

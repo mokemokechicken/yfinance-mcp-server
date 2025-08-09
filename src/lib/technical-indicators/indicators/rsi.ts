@@ -2,8 +2,8 @@ import { CalculationError } from "../types";
 import { Calculator } from "../utils/calculator";
 
 export class RSICalculator {
-	// RSI計算のメインメソッド
-	public static calculate(prices: number[], period = 14): number {
+	// RSI計算のメインメソッド（ウォームアップ期間を考慮）
+	public static calculate(prices: number[], period = 14, warmupPeriod = 100): number {
 		if (!Array.isArray(prices) || prices.length === 0) {
 			throw new CalculationError(
 				"Prices array is empty or invalid",
@@ -11,15 +11,20 @@ export class RSICalculator {
 			);
 		}
 
-		if (prices.length < period + 1) {
+		const requiredLength = period + warmupPeriod + 1;
+		if (prices.length < requiredLength) {
 			throw new CalculationError(
-				`Not enough data points. Need ${period + 1}, got ${prices.length}`,
+				`Not enough data points for accurate RSI. Need ${requiredLength}, got ${prices.length}`,
 				"INSUFFICIENT_DATA",
 			);
 		}
 
+		// ウォームアップ期間を考慮した価格データを使用
+		const warmupStartIndex = Math.max(0, prices.length - period - warmupPeriod - 1);
+		const effectivePrices = prices.slice(warmupStartIndex);
+		
 		// 価格変動の計算
-		const priceChanges = RSICalculator.calculatePriceChanges(prices);
+		const priceChanges = RSICalculator.calculatePriceChanges(effectivePrices);
 
 		// 上昇・下落の分離
 		const gains: number[] = [];
@@ -38,7 +43,7 @@ export class RSICalculator {
 		let avgGain = initialAvgGain;
 		let avgLoss = initialAvgLoss;
 
-		// 最新のperiod分まで順次計算
+		// 最新のperiod分まで順次計算（高精度で保持）
 		for (let i = period; i < gains.length; i++) {
 			avgGain = (avgGain * (period - 1) + gains[i]) / period;
 			avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
@@ -51,7 +56,7 @@ export class RSICalculator {
 
 		const rs = avgGain / avgLoss;
 
-		// RSI = 100 - (100 / (1 + RS))
+		// RSI = 100 - (100 / (1 + RS))（最終結果のみ丸める）
 		const rsi = 100 - 100 / (1 + rs);
 
 		return Calculator.round(rsi, 2);
