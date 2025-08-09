@@ -1,6 +1,6 @@
 {
 	"name": "@mokemokechicken/yfinance-mcp-server",
-	"version": "0.0.3",
+	"version": "1.0.0",
 	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
 	"main": "build/index.js",
 	"bin": {
