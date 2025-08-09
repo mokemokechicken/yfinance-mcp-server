@@ -6,6 +6,8 @@
 
 Yahoo Financeのデータにアクセスするためのメッセージコントロールプロトコル（MCP）サーバーです。このサーバーは、yfinanceを通じて株式市場データを取得するためのシンプルなインターフェースを提供します。
 
+**本プロジェクトは [onori/yfinance-mcp-server](https://github.com/onori/yfinance-mcp-server) をベースにして、包括的なテクニカル分析機能を追加・強化したものです。**
+
 ## 機能
 
 - カスタマイズ可能な期間と間隔で株式の履歴データを取得
@@ -22,7 +24,7 @@ Cursor MCPクライアントの例：
     "yfinance": {
       "command": "npx",
       "args": [
-        "@onori/yfinance-mcp-server"
+        "@mokemokechicken/yfinance-mcp-server"
       ]
     }
   }

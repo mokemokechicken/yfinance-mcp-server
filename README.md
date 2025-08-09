@@ -6,6 +6,8 @@
 
 A Message Control Protocol (MCP) server for accessing Yahoo Finance data. This server provides a simple interface to retrieve stock market data through yfinance.
 
+**This project is based on [onori/yfinance-mcp-server](https://github.com/onori/yfinance-mcp-server) and has been enhanced with comprehensive technical analysis features.**
+
 ## Features
 
 - Get historical stock data with customizable periods and intervals
