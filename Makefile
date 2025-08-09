@@ -9,5 +9,8 @@ test:
 lint:
 	npm run check
 
+prepare: build test lint
+	npm pack --dry-run
+
 publish: build test lint
 	npm publish --access public
