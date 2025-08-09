@@ -353,6 +353,7 @@ export class TechnicalAnalyzer {
 			...baseResult,
 			financialMetrics,
 			extendedIndicators,
+			priceHistoryData: priceData,
 		};
 	}
 

@@ -36,7 +36,14 @@ AIが理解しやすい構造化された日本語レポート形式で返す：
 
 ### 価格情報
 - 現在価格: ¥{current_price} ({change} / {change_percent}%)
-- 価格推移データ: {days}日分の詳細データ
+
+**価格推移データ（直近{days}日分）:**
+```
+日付        始値      高値      安値      終値      出来高
+YYYY-MM-DD  ¥{open}   ¥{high}   ¥{low}    ¥{close}  {volume}
+YYYY-MM-DD  ¥{open}   ¥{high}   ¥{low}    ¥{close}  {volume}
+...
+```
 
 ### 財務指標
 - 時価総額: ¥{marketCap}

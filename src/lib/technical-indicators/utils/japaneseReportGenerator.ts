@@ -3,7 +3,7 @@
  * spike_all_features.ts のgetJapaneseSignal機能を活用
  */
 
-import type { ComprehensiveStockAnalysisResult } from "../types";
+import type { ComprehensiveStockAnalysisResult, PriceData } from "../types";
 
 // シグナルの日本語変換（spike_all_features.tsから移植）
 function getJapaneseSignal(type: string, signal: string): string {
@@ -124,6 +124,34 @@ function formatPercentage(value: number): string {
 	return `${sign}${value.toFixed(2)}%`;
 }
 
+// 価格推移データテーブル生成機能
+function generatePriceHistoryTable(priceData: PriceData[], days: number): string {
+	if (!priceData || priceData.length === 0) {
+		return "価格データが利用できません。";
+	}
+
+	const recentData = priceData.slice(-days);
+	const sections: string[] = [];
+
+	sections.push("```");
+	sections.push("日付        始値      高値      安値      終値      出来高");
+
+	for (const day of recentData) {
+		const date =
+			day.date instanceof Date ? day.date.toISOString().split("T")[0] : new Date(day.date).toISOString().split("T")[0];
+		const open = formatCurrency(day.open);
+		const high = formatCurrency(day.high);
+		const low = formatCurrency(day.low);
+		const close = formatCurrency(day.close);
+		const volume = day.volume.toLocaleString();
+
+		sections.push(`${date}  ${open.padEnd(8)}  ${high.padEnd(8)}  ${low.padEnd(8)}  ${close.padEnd(8)}  ${volume}`);
+	}
+
+	sections.push("```");
+	return sections.join("\n");
+}
+
 // 日本語レポート生成
 export function generateJapaneseReport(analysis: ComprehensiveStockAnalysisResult, days: number): string {
 	const sections: string[] = [];
@@ -142,7 +170,9 @@ export function generateJapaneseReport(analysis: ComprehensiveStockAnalysisResul
 	sections.push(
 		`- 現在価格: ${formatCurrency(analysis.priceData.current)} (${formatCurrency(analysis.priceData.change)} / ${formatPercentage(analysis.priceData.changePercent)})`,
 	);
-	sections.push(`- 価格推移データ: ${days}日分の詳細データ`);
+	sections.push("");
+	sections.push(`**価格推移データ（直近${days}日分）:**`);
+	sections.push(generatePriceHistoryTable(analysis.priceHistoryData, days));
 
 	// 財務指標
 	if (analysis.financialMetrics) {

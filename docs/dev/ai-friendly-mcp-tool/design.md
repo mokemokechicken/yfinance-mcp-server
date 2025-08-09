@@ -214,16 +214,27 @@ server.tool(
 
 ### レポート生成関数設計
 ```typescript
-function generateComprehensiveReport(data: AnalysisData): string {
+function generateComprehensiveReport(data: AnalysisData, days: number): string {
   const sections = [
-    generateBasicInfo(data.symbol, data.days),
-    generatePriceInfo(data.priceData),
+    generateBasicInfo(data.symbol, days),
+    generatePriceInfo(data.priceData, days), // 価格推移データテーブル追加
     generateFinancialSection(data.financialMetrics),
     generateTechnicalSection(data.analysisResult, data.extendedAnalysis),
     generateSignalSection(data.analysisResult.signals)
   ];
   
   return sections.join('\n\n');
+}
+
+// 価格推移データテーブル生成機能
+function generatePriceHistoryTable(priceData: PriceData[], days: number): string {
+  const recentData = priceData.slice(-days);
+  const header = "日付        始値      高値      安値      終値      出来高";
+  const rows = recentData.map(day => 
+    `${day.date.toISOString().split('T')[0]}  ¥${day.open.toLocaleString()}   ¥${day.high.toLocaleString()}   ¥${day.low.toLocaleString()}    ¥${day.close.toLocaleString()}  ${day.volume.toLocaleString()}`
+  );
+  
+  return [header, ...rows].join('\n');
 }
 ```
 
