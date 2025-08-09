@@ -32,6 +32,11 @@ export class MovingAverageDeviationCalculator {
 		// 移動平均を計算
 		const movingAverage = MovingAverageCalculator.calculate(prices, period);
 
+		// 分母が0の場合は例外を投げる
+		if (movingAverage === 0) {
+			throw new Error("移動平均が0のため乖離率を計算できません");
+		}
+
 		// 乖離率を計算（%）
 		const deviation = ((currentPrice - movingAverage) / movingAverage) * 100;
 
@@ -233,12 +238,32 @@ export class MovingAverageDeviationCalculator {
 
 		// トレンド判定（線形回帰の傾き）
 		const n = deviationHistory.length;
+		
+		// n=1の場合は傾きを計算できないので安定と判定
+		if (n < 2) {
+			return {
+				trend: "stable" as const,
+				deviationHistory,
+				averageDeviation,
+			};
+		}
+
 		const sumX = (n * (n - 1)) / 2; // 0 + 1 + 2 + ... + (n-1)
 		const sumY = deviationHistory.reduce((sum, y) => sum + y, 0);
 		const sumXY = deviationHistory.reduce((sum, y, i) => sum + i * y, 0);
 		const sumXX = (n * (n - 1) * (2 * n - 1)) / 6; // 0^2 + 1^2 + ... + (n-1)^2
 
-		const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+		const denominator = n * sumXX - sumX * sumX;
+		// 分母が0の場合は安定と判定
+		if (denominator === 0) {
+			return {
+				trend: "stable" as const,
+				deviationHistory,
+				averageDeviation,
+			};
+		}
+
+		const slope = (n * sumXY - sumX * sumY) / denominator;
 
 		let trend: "increasing" | "decreasing" | "stable";
 		if (slope > 0.5) {

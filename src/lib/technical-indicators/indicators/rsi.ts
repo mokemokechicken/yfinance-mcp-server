@@ -11,7 +11,7 @@ export class RSICalculator {
 	public static calculate(
 		prices: number[],
 		period = 14,
-		warmupPeriod = 100,
+		warmupPeriod = 250,
 	): number {
 		// 入力検証（強化版）
 		ValidationUtils.validatePricesArray(prices);
@@ -248,9 +248,10 @@ export class RSICalculator {
 	public static calculateExtended(
 		prices: number[],
 		levels: RSILevels = { overbought: 70, oversold: 30 },
+		warmupPeriod = 250,
 	): RSIExtendedResult {
-		const rsi14 = RSICalculator.calculate(prices, 14);
-		const rsi21 = RSICalculator.calculate(prices, 21);
+		const rsi14 = RSICalculator.calculate(prices, 14, warmupPeriod);
+		const rsi21 = RSICalculator.calculate(prices, 21, warmupPeriod);
 
 		return {
 			rsi14,

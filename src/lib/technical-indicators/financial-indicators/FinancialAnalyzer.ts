@@ -58,19 +58,19 @@ export class FinancialAnalyzer {
 				result.trailingPE = quoteSummary.summaryDetail.trailingPE;
 			}
 
-			// PER（予想）
-			if (quoteSummary.defaultKeyStatistics?.forwardPE) {
-				result.forwardPE = quoteSummary.defaultKeyStatistics.forwardPE;
-			}
+			// PER（予想）- フェールバック実装
+			result.forwardPE =
+				quoteSummary.defaultKeyStatistics?.forwardPE ??
+				quoteSummary.summaryDetail?.forwardPE;
 
 			// PBR
 			if (quoteSummary.defaultKeyStatistics?.priceToBook) {
 				result.priceToBook = quoteSummary.defaultKeyStatistics.priceToBook;
 			}
 
-			// ROE
-			if (quoteSummary.financialData?.returnOnEquity) {
-				result.returnOnEquity = quoteSummary.financialData.returnOnEquity;
+			// ROE（%変換）
+			if (quoteSummary.financialData?.returnOnEquity != null) {
+				result.returnOnEquity = quoteSummary.financialData.returnOnEquity * 100;
 			}
 
 			// EPS成長率
@@ -78,9 +78,12 @@ export class FinancialAnalyzer {
 				result.earningsGrowth = quoteSummary.financialData.earningsGrowth;
 			}
 
-			// 配当利回り（%変換）
-			if (quoteSummary.summaryDetail?.dividendYield) {
-				result.dividendYield = quoteSummary.summaryDetail.dividendYield * 100;
+			// 配当利回り（%変換）- フェールバック実装
+			const dividendYield =
+				quoteSummary.summaryDetail?.dividendYield ??
+				quoteSummary.summaryDetail?.trailingAnnualDividendYield;
+			if (dividendYield != null) {
+				result.dividendYield = dividendYield * 100;
 			}
 
 			// 自己資本比率（計算）
@@ -116,11 +119,23 @@ export class FinancialAnalyzer {
 				return undefined;
 			}
 
-			const equity = balanceSheet.totalStockholderEquity;
-			const totalAssets = balanceSheet.totalAssets;
+			// Yahoo Finance APIの値は数値または{raw: number, fmt: string}オブジェクト
+			const extractNumber = (value: unknown): number | undefined => {
+				if (typeof value === "number") {
+					return value;
+				}
+				if (value && typeof value === "object" && "raw" in value) {
+					const raw = (value as { raw: unknown }).raw;
+					return typeof raw === "number" ? raw : undefined;
+				}
+				return undefined;
+			};
+
+			const equity = extractNumber(balanceSheet.totalStockholderEquity);
+			const totalAssets = extractNumber(balanceSheet.totalAssets);
 
 			// 有効な数値かチェック
-			if (equity <= 0 || totalAssets <= 0) {
+			if (!equity || !totalAssets || equity <= 0 || totalAssets <= 0) {
 				return undefined;
 			}
 

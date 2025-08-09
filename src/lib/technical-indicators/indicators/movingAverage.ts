@@ -14,7 +14,12 @@ export class MovingAverageCalculator {
 		const recentPrices = Calculator.lastN(prices, period);
 		const sum = recentPrices.reduce((sum, price) => sum + price, 0);
 
-		return Calculator.round(sum / period, 3);
+		return sum / period; // 内部計算では丸めない
+	}
+
+	// 表示用の移動平均（丸め処理あり）
+	public static calculateRounded(prices: number[], period: number): number {
+		return Calculator.round(MovingAverageCalculator.calculate(prices, period), 3);
 	}
 
 	// 複数期間の移動平均を一度に計算
@@ -47,7 +52,12 @@ export class MovingAverageCalculator {
 		ValidationUtils.validateDataLength(prices.length, period, "price data");
 
 		const emaValues = Calculator.exponentialMovingAverage(prices, period);
-		return Calculator.round(emaValues[emaValues.length - 1], 3);
+		return emaValues[emaValues.length - 1]; // 内部計算では丸めない
+	}
+
+	// 表示用のEMA（丸め処理あり）
+	public static calculateEMARounded(prices: number[], period: number): number {
+		return Calculator.round(MovingAverageCalculator.calculateEMA(prices, period), 3);
 	}
 
 	// 移動平均の配列を計算（全期間、統一バリデーション）
@@ -61,7 +71,14 @@ export class MovingAverageCalculator {
 		}
 
 		const smaArray = Calculator.simpleMovingAverage(prices, period);
-		return smaArray.map((value) => Calculator.round(value, 3));
+		return smaArray; // 内部計算では丸めない
+	}
+
+	// 表示用の移動平均配列（丸め処理あり）
+	public static calculateArrayRounded(prices: number[], period: number): number[] {
+		return MovingAverageCalculator.calculateArray(prices, period).map((value) => 
+			Calculator.round(value, 3)
+		);
 	}
 
 	// トレンド判定（移動平均線の傾き）
@@ -69,6 +86,7 @@ export class MovingAverageCalculator {
 		prices: number[],
 		period: number,
 		lookback = 5,
+		threshold = 0.01, // デフォルト1%に変更（従来の0.5%から）
 	): "upward" | "downward" | "sideways" {
 		try {
 			const maArray = MovingAverageCalculator.calculateArray(prices, period);
@@ -80,8 +98,12 @@ export class MovingAverageCalculator {
 			const first = recent[0];
 			const last = recent[recent.length - 1];
 
+			// first が 0 の場合は変化率を計算できない
+			if (first === 0) {
+				return "sideways";
+			}
+
 			const change = (last - first) / first;
-			const threshold = 0.005; // 0.5%の変化を閾値とする
 
 			if (change > threshold) return "upward";
 			if (change < -threshold) return "downward";
