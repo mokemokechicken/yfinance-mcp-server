@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": []
+		"ignore": ["spike/**", ".claude/**"]
 	},
 	"formatter": {
 		"enabled": true,
