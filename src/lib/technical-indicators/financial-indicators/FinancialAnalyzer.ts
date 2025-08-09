@@ -5,10 +5,10 @@
 
 import yahooFinance from "yahoo-finance2";
 import type {
+	FINANCIAL_MODULES,
+	FinancialDataError,
 	FinancialMetricsResult,
 	QuoteSummaryResult,
-	FinancialDataError,
-	FINANCIAL_MODULES,
 } from "./types.js";
 
 export class FinancialAnalyzer {

@@ -4,7 +4,7 @@
  */
 
 import { MovingAverageCalculator } from "../indicators/movingAverage.js";
-import type { MovingAverageDeviationResult, DeviationSignal } from "./types.js";
+import type { DeviationSignal, MovingAverageDeviationResult } from "./types.js";
 
 export class MovingAverageDeviationCalculator {
 	/**

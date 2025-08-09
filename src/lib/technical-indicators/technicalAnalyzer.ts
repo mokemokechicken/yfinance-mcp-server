@@ -1,22 +1,22 @@
 import yahooFinance from "yahoo-finance2";
+import { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
+import { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
+import { BollingerBandsCalculator } from "./indicators/bollingerBands";
+import { CrossDetectionCalculator } from "./indicators/crossDetection";
 import { MACDCalculator } from "./indicators/macd";
 import { MovingAverageCalculator } from "./indicators/movingAverage";
 import { RSICalculator } from "./indicators/rsi";
-import { BollingerBandsCalculator } from "./indicators/bollingerBands";
 import { StochasticCalculator } from "./indicators/stochastic";
-import { CrossDetectionCalculator } from "./indicators/crossDetection";
 import { VolumeAnalysisCalculator } from "./indicators/volumeAnalysis";
 import { VWAPCalculator } from "./indicators/vwap";
-import { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
-import { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
 import {
+	type ComprehensiveStockAnalysisResult,
 	DataFetchError,
+	type ExtendedIndicatorsResult,
 	type IndicatorConfig,
 	type PriceData,
 	type StockAnalysisResult,
 	type TechnicalIndicators,
-	type ComprehensiveStockAnalysisResult,
-	type ExtendedIndicatorsResult,
 } from "./types";
 import { Calculator } from "./utils/calculator";
 import { DataProcessor } from "./utils/dataProcessor";

@@ -1,10 +1,10 @@
-import { CalculationError } from "../types";
-import { Calculator } from "../utils/calculator";
-import { ValidationUtils } from "../utils/validation";
 import type {
 	RSIExtendedResult,
 	RSILevels,
 } from "../financial-indicators/types.js";
+import { CalculationError } from "../types";
+import { Calculator } from "../utils/calculator";
+import { ValidationUtils } from "../utils/validation";
 
 export class RSICalculator {
 	// RSI計算のメインメソッド（ウォームアップ期間を考慮、強化版）
