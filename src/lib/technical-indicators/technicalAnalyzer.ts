@@ -354,6 +354,8 @@ export class TechnicalAnalyzer {
 				return new Date(now.getTime() - oneDay);
 			case "5d":
 				return new Date(now.getTime() - 5 * oneDay);
+			case "14d":
+				return new Date(now.getTime() - 14 * oneDay);
 			case "1mo":
 				return new Date(now.getTime() - 30 * oneDay);
 			case "3mo":

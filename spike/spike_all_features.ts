@@ -44,10 +44,10 @@ async function testAllTechnicalIndicators(symbol?: string) {
 		console.log(`📊 ${stockSymbol}の実データ分析...`);
 		const startTime = Date.now();
 		
-		const priceData = await TechnicalAnalyzer.fetchData(stockSymbol, "14d");
+		const priceData = await TechnicalAnalyzer.fetchData(stockSymbol, "3mo");
 		const closePrices = priceData.map(d => d.close);
 		
-		console.log("\n📊 直近14日のRawデータ:");
+		console.log("\n📊 直近データ:");
 		console.log("Date\t\tOpen\tHigh\tLow\tClose\tVolume");
 		console.log("-".repeat(80));
 		priceData.forEach(data => {
@@ -270,10 +270,10 @@ async function testFinancialMetrics(symbol: string, _closePrices: number[]) {
 		console.log(`  PER（実績）: ${financialMetrics.trailingPE?.toFixed(2) || "N/A"}`);
 		console.log(`  PER（予想）: ${financialMetrics.forwardPE?.toFixed(2) || "N/A"}`);
 		console.log(`  PBR: ${financialMetrics.priceToBook?.toFixed(2) || "N/A"}`);
-		console.log(`  ROE: ${financialMetrics.returnOnEquity ? (financialMetrics.returnOnEquity * 100).toFixed(2) + "%" : "N/A"}`);
+		console.log(`  ROE: ${financialMetrics.returnOnEquity ? financialMetrics.returnOnEquity.toFixed(2) + "%" : "N/A"}`);
 		console.log(`  EPS成長率: ${financialMetrics.earningsGrowth ? (financialMetrics.earningsGrowth * 100).toFixed(2) + "%" : "N/A"}`);
-		console.log(`  配当利回り: ${financialMetrics.dividendYield?.toFixed(2)}%` || "N/A");
-		console.log(`  自己資本比率: ${financialMetrics.equityRatio?.toFixed(1)}%` || "N/A");
+		console.log(`  配当利回り: ${financialMetrics.dividendYield ? financialMetrics.dividendYield.toFixed(2) + "%" : "N/A"}`);
+		console.log(`  自己資本比率: ${financialMetrics.equityRatio ? financialMetrics.equityRatio.toFixed(1) + "%" : "N/A"}`);
 
 		// 財務指標の健全性チェック
 		const validation = FinancialAnalyzer.validateMetrics(financialMetrics);
