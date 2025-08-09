@@ -457,40 +457,40 @@ export class TechnicalAnalyzer {
 
 		const crossDetection = safeCalculate(
 			() => CrossDetectionCalculator.detectCross(closePrices, 25, 50, 3),
-			() => ({ 
-				type: "none" as const, 
-				shortMA: 0, 
-				longMA: 0, 
+			() => ({
+				type: "none" as const,
+				shortMA: 0,
+				longMA: 0,
 				crossPoint: 0,
-				strength: "weak" as const, 
-				confirmationDays: 0 
+				strength: "weak" as const,
+				confirmationDays: 0,
 			}),
 			"クロス検出",
 		);
 
 		const volumeAnalysis = safeCalculate(
 			() => VolumeAnalysisCalculator.calculate(this.priceData, 20),
-			() => ({ 
-				averageVolume: 0, 
-				relativeVolume: 0, 
-				volumeTrend: "stable" as const, 
-				volumeSpike: false, 
-				priceVolumeStrength: "weak" as const, 
-				accumulation: "neutral" as const 
+			() => ({
+				averageVolume: 0,
+				relativeVolume: 0,
+				volumeTrend: "stable" as const,
+				volumeSpike: false,
+				priceVolumeStrength: "weak" as const,
+				accumulation: "neutral" as const,
 			}),
 			"出来高分析",
 		);
 
 		const vwap = safeCalculate(
 			() => VWAPCalculator.calculate(this.priceData, 1),
-			() => ({ 
-				vwap: 0, 
-				upperBand: 0, 
+			() => ({
+				vwap: 0,
+				upperBand: 0,
 				lowerBand: 0,
 				deviation: 0,
-				position: "at" as const, 
-				strength: "weak" as const, 
-				trend: "neutral" as const 
+				position: "at" as const,
+				strength: "weak" as const,
+				trend: "neutral" as const,
 			}),
 			"VWAP",
 		);
@@ -498,24 +498,24 @@ export class TechnicalAnalyzer {
 		// Phase3: 財務拡張指標（Graceful Degradation）
 		const rsiExtended = safeCalculate(
 			() => RSICalculator.calculateExtended(closePrices),
-			() => ({ 
-				rsi14: 0, 
-				rsi21: 0, 
-				signal14: "neutral" as const, 
-				signal21: "neutral" as const 
+			() => ({
+				rsi14: 0,
+				rsi21: 0,
+				signal14: "neutral" as const,
+				signal21: "neutral" as const,
 			}),
 			"RSI拡張版",
 		);
 
 		const movingAverageDeviations = [25, 50, 200]
-			.map(period => 
+			.map((period) =>
 				safeCalculate(
 					() => MovingAverageDeviationCalculator.calculate(closePrices, period),
 					() => null,
 					`移動平均乖離率(${period}日)`,
-				)
+				),
 			)
-			.filter(result => result !== null);
+			.filter((result) => result !== null);
 
 		return {
 			bollingerBands,
