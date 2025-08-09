@@ -1,6 +1,6 @@
 import { CalculationError } from "../types";
-import { Calculator } from "../utils/calculator";
 import type { PriceData } from "../types";
+import { Calculator } from "../utils/calculator";
 
 export interface VolumeAnalysisResult {
 	averageVolume: number; // 平均出来高
@@ -32,17 +32,19 @@ export class VolumeAnalysisCalculator {
 		}
 
 		const recentData = Calculator.lastN(priceData, period);
-		const volumes = recentData.map(d => d.volume);
+		const volumes = recentData.map((d) => d.volume);
 		const currentVolume = priceData[priceData.length - 1].volume;
 
 		// 平均出来高の計算
 		const averageVolume = Calculator.average(volumes);
 
 		// 相対出来高の計算
-		const relativeVolume = averageVolume > 0 ? currentVolume / averageVolume : 1;
+		const relativeVolume =
+			averageVolume > 0 ? currentVolume / averageVolume : 1;
 
 		// 出来高トレンドの判定
-		const volumeTrend = VolumeAnalysisCalculator.calculateVolumeTrend(recentData);
+		const volumeTrend =
+			VolumeAnalysisCalculator.calculateVolumeTrend(recentData);
 
 		// 出来高急増の検出
 		const volumeSpike = VolumeAnalysisCalculator.detectVolumeSpike(
@@ -51,14 +53,12 @@ export class VolumeAnalysisCalculator {
 		);
 
 		// 価格と出来高の相関強度
-		const priceVolumeStrength = VolumeAnalysisCalculator.calculatePriceVolumeStrength(
-			recentData,
-		);
+		const priceVolumeStrength =
+			VolumeAnalysisCalculator.calculatePriceVolumeStrength(recentData);
 
 		// 蓄積・分散の判定
-		const accumulation = VolumeAnalysisCalculator.calculateAccumulationDistribution(
-			recentData,
-		);
+		const accumulation =
+			VolumeAnalysisCalculator.calculateAccumulationDistribution(recentData);
 
 		return {
 			averageVolume: Calculator.round(averageVolume, 0),
@@ -80,8 +80,8 @@ export class VolumeAnalysisCalculator {
 		const recent = Calculator.lastN(priceData, lookback);
 		const previous = priceData.slice(-lookback * 2, -lookback);
 
-		const recentAvg = Calculator.average(recent.map(d => d.volume));
-		const previousAvg = Calculator.average(previous.map(d => d.volume));
+		const recentAvg = Calculator.average(recent.map((d) => d.volume));
+		const previousAvg = Calculator.average(previous.map((d) => d.volume));
 
 		const change = (recentAvg - previousAvg) / previousAvg;
 
@@ -98,7 +98,7 @@ export class VolumeAnalysisCalculator {
 	): boolean {
 		if (priceData.length < period) return false;
 
-		const volumes = priceData.map(d => d.volume);
+		const volumes = priceData.map((d) => d.volume);
 		const currentVolume = volumes[volumes.length - 1];
 		const averageVolume = Calculator.average(volumes.slice(0, -1)); // 現在を除く
 
@@ -116,11 +116,14 @@ export class VolumeAnalysisCalculator {
 		const volumeChanges: number[] = [];
 
 		for (let i = 1; i < priceData.length; i++) {
-			const priceChange = (priceData[i].close - priceData[i - 1].close) / priceData[i - 1].close;
-			const volumeChange = priceData[i - 1].volume > 0 
-				? (priceData[i].volume - priceData[i - 1].volume) / priceData[i - 1].volume 
-				: 0;
-			
+			const priceChange =
+				(priceData[i].close - priceData[i - 1].close) / priceData[i - 1].close;
+			const volumeChange =
+				priceData[i - 1].volume > 0
+					? (priceData[i].volume - priceData[i - 1].volume) /
+						priceData[i - 1].volume
+					: 0;
+
 			priceChanges.push(Math.abs(priceChange));
 			volumeChanges.push(Math.abs(volumeChange));
 		}
@@ -148,7 +151,9 @@ export class VolumeAnalysisCalculator {
 		const sumYY = y.reduce((sum, val) => sum + val * val, 0);
 
 		const numerator = n * sumXY - sumX * sumY;
-		const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
+		const denominator = Math.sqrt(
+			(n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY),
+		);
 
 		return denominator === 0 ? 0 : numerator / denominator;
 	}
@@ -165,14 +170,14 @@ export class VolumeAnalysisCalculator {
 		// OBV風の指標を計算
 		for (let i = 1; i < priceData.length; i++) {
 			const priceChange = priceData[i].close - priceData[i - 1].close;
-			
+
 			if (priceChange > 0) {
 				obvValue += priceData[i].volume;
 			} else if (priceChange < 0) {
 				obvValue -= priceData[i].volume;
 			}
 			// 価格変動なしの場合は出来高を加算しない
-			
+
 			obvValues.push(obvValue);
 		}
 
@@ -199,15 +204,19 @@ export class VolumeAnalysisCalculator {
 	}> {
 		if (priceData.length === 0) return [];
 
-		const prices = priceData.map(d => d.close);
-		const volumes = priceData.map(d => d.volume);
+		const prices = priceData.map((d) => d.close);
+		const volumes = priceData.map((d) => d.volume);
 		const minPrice = Calculator.min(prices);
 		const maxPrice = Calculator.max(prices);
 		const totalVolume = volumes.reduce((sum, vol) => sum + vol, 0);
 
 		// 価格帯を分割
 		const binSize = (maxPrice - minPrice) / bins;
-		const profile: Array<{ priceLevel: number; volume: number; percentage: number }> = [];
+		const profile: Array<{
+			priceLevel: number;
+			volume: number;
+			percentage: number;
+		}> = [];
 
 		for (let i = 0; i < bins; i++) {
 			const lowerBound = minPrice + i * binSize;
@@ -215,7 +224,7 @@ export class VolumeAnalysisCalculator {
 			const priceLevel = (lowerBound + upperBound) / 2;
 
 			let binVolume = 0;
-			
+
 			for (const data of priceData) {
 				if (data.close >= lowerBound && data.close < upperBound) {
 					binVolume += data.volume;
@@ -223,7 +232,7 @@ export class VolumeAnalysisCalculator {
 			}
 
 			const percentage = totalVolume > 0 ? binVolume / totalVolume : 0;
-			
+
 			profile.push({
 				priceLevel: Calculator.round(priceLevel, 2),
 				volume: binVolume,
@@ -239,7 +248,7 @@ export class VolumeAnalysisCalculator {
 		priceData: PriceData[],
 		period = 20,
 	): number[] {
-		const volumes = priceData.map(d => d.volume);
+		const volumes = priceData.map((d) => d.volume);
 		return Calculator.simpleMovingAverage(volumes, period);
 	}
 
@@ -251,13 +260,13 @@ export class VolumeAnalysisCalculator {
 		if (priceData.length < period) return [];
 
 		const relativeVolumes: number[] = [];
-		
+
 		for (let i = period - 1; i < priceData.length; i++) {
 			const periodData = priceData.slice(i - period + 1, i + 1);
-			const volumes = periodData.map(d => d.volume);
+			const volumes = periodData.map((d) => d.volume);
 			const avgVolume = Calculator.average(volumes.slice(0, -1)); // 現在を除く
 			const currentVolume = volumes[volumes.length - 1];
-			
+
 			const relativeVolume = avgVolume > 0 ? currentVolume / avgVolume : 1;
 			relativeVolumes.push(Calculator.round(relativeVolume, 2));
 		}
@@ -283,22 +292,19 @@ export class VolumeAnalysisCalculator {
 
 		for (const data of recentData) {
 			const { high, low, close, volume } = data;
-			
+
 			// マネーフロー倍数の計算
-			const moneyFlowMultiplier = high - low > 0 
-				? ((close - low) - (high - close)) / (high - low)
-				: 0;
-			
+			const moneyFlowMultiplier =
+				high - low > 0 ? (close - low - (high - close)) / (high - low) : 0;
+
 			// マネーフローボリュームの計算
 			const moneyFlowVolume = moneyFlowMultiplier * volume;
-			
+
 			cmfSum += moneyFlowVolume;
 			volumeSum += volume;
 		}
 
-		return volumeSum > 0 
-			? Calculator.round(cmfSum / volumeSum, 4)
-			: 0;
+		return volumeSum > 0 ? Calculator.round(cmfSum / volumeSum, 4) : 0;
 	}
 
 	// 出来高重み付き価格（VWAP）のサポート関数
@@ -314,7 +320,7 @@ export class VolumeAnalysisCalculator {
 			totalVolume += data.volume;
 		}
 
-		return totalVolume > 0 
+		return totalVolume > 0
 			? Calculator.round(totalVolumePrice / totalVolume, 2)
 			: 0;
 	}

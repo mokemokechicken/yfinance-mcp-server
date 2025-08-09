@@ -1,6 +1,6 @@
 import { CalculationError } from "../types";
-import { Calculator } from "../utils/calculator";
 import type { PriceData } from "../types";
+import { Calculator } from "../utils/calculator";
 
 export interface VWAPResult {
 	vwap: number;
@@ -35,10 +35,10 @@ export class VWAPCalculator {
 			// 代表価格（Typical Price）の計算
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			const volumePrice = typicalPrice * data.volume;
-			
+
 			totalVolumePrice += volumePrice;
 			totalVolume += data.volume;
-			
+
 			volumePrices.push(volumePrice);
 			volumes.push(data.volume);
 		}
@@ -67,7 +67,8 @@ export class VWAPCalculator {
 		// 現在価格とVWAPの位置関係
 		const currentPrice = priceData[priceData.length - 1].close;
 		let position: "above" | "below" | "at";
-		if (currentPrice > vwap * 1.001) position = "above"; // 0.1%の余裕
+		if (currentPrice > vwap * 1.001)
+			position = "above"; // 0.1%の余裕
 		else if (currentPrice < vwap * 0.999) position = "below";
 		else position = "at";
 
@@ -100,11 +101,12 @@ export class VWAPCalculator {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			cumulativeVolumePrice += typicalPrice * data.volume;
 			cumulativeVolume += data.volume;
-			
-			const vwap = cumulativeVolume > 0 
-				? cumulativeVolumePrice / cumulativeVolume 
-				: typicalPrice;
-			
+
+			const vwap =
+				cumulativeVolume > 0
+					? cumulativeVolumePrice / cumulativeVolume
+					: typicalPrice;
+
 			vwapArray.push(Calculator.round(vwap, 2));
 		}
 
@@ -122,20 +124,21 @@ export class VWAPCalculator {
 
 		for (let i = period - 1; i < priceData.length; i++) {
 			const periodData = priceData.slice(i - period + 1, i + 1);
-			
+
 			let totalVolumePrice = 0;
 			let totalVolume = 0;
-			
+
 			for (const data of periodData) {
 				const typicalPrice = (data.high + data.low + data.close) / 3;
 				totalVolumePrice += typicalPrice * data.volume;
 				totalVolume += data.volume;
 			}
-			
-			const vwap = totalVolume > 0 
-				? totalVolumePrice / totalVolume 
-				: periodData[periodData.length - 1].close;
-			
+
+			const vwap =
+				totalVolume > 0
+					? totalVolumePrice / totalVolume
+					: periodData[periodData.length - 1].close;
+
 			movingVWAP.push(Calculator.round(vwap, 2));
 		}
 
@@ -153,7 +156,7 @@ export class VWAPCalculator {
 		for (const data of priceData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			const priceDiff = typicalPrice - vwap;
-			varianceSum += (priceDiff * priceDiff) * data.volume;
+			varianceSum += priceDiff * priceDiff * data.volume;
 		}
 
 		const variance = varianceSum / totalVolume;
@@ -181,7 +184,7 @@ export class VWAPCalculator {
 		}
 
 		const consistency = Math.abs(consistentDirection) / recentPrices.length;
-		
+
 		if (consistency >= 0.8) return "strong"; // 80%以上の一貫性
 		if (consistency >= 0.6) return "moderate"; // 60%以上の一貫性
 		return "weak";
@@ -197,20 +200,21 @@ export class VWAPCalculator {
 		// 過去のVWAPと比較してトレンドを判定
 		const halfwayPoint = Math.floor(priceData.length / 2);
 		const earlierData = priceData.slice(0, halfwayPoint);
-		
+
 		let totalVolumePrice = 0;
 		let totalVolume = 0;
-		
+
 		for (const data of earlierData) {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			totalVolumePrice += typicalPrice * data.volume;
 			totalVolume += data.volume;
 		}
-		
-		const earlierVWAP = totalVolume > 0 ? totalVolumePrice / totalVolume : currentVWAP;
-		
+
+		const earlierVWAP =
+			totalVolume > 0 ? totalVolumePrice / totalVolume : currentVWAP;
+
 		const change = (currentVWAP - earlierVWAP) / earlierVWAP;
-		
+
 		if (change > 0.02) return "bullish"; // 2%以上の上昇
 		if (change < -0.02) return "bearish"; // 2%以上の下落
 		return "neutral";
@@ -224,13 +228,13 @@ export class VWAPCalculator {
 		if (priceData.length < 3) return "neutral";
 
 		const recentPrices = Calculator.lastN(priceData, 3);
-		const touchCount = recentPrices.filter(data => {
+		const touchCount = recentPrices.filter((data) => {
 			const typicalPrice = (data.high + data.low + data.close) / 3;
 			return Math.abs(typicalPrice - vwap) / vwap < 0.005; // 0.5%の範囲
 		}).length;
 
 		const currentPrice = priceData[priceData.length - 1].close;
-		
+
 		// VWAPに複数回触れて反発している場合
 		if (touchCount >= 2) {
 			if (currentPrice > vwap) {
@@ -254,7 +258,7 @@ export class VWAPCalculator {
 		const currentPrice = currentData.close;
 
 		// 平均出来高の計算
-		const volumes = priceData.slice(-10).map(d => d.volume);
+		const volumes = priceData.slice(-10).map((d) => d.volume);
 		const avgVolume = Calculator.average(volumes.slice(0, -1)); // 現在を除く
 
 		// 出来高が閾値を超えているかチェック
@@ -266,7 +270,7 @@ export class VWAPCalculator {
 		if (currentPrice > vwapResult.upperBand) {
 			return "bullish_breakout";
 		}
-		
+
 		if (currentPrice < vwapResult.lowerBand) {
 			return "bearish_breakout";
 		}
@@ -285,7 +289,8 @@ export class VWAPCalculator {
 		const currentPrice = priceData[priceData.length - 1].close;
 
 		// VWAPから大きく乖離している場合の平均回帰狙い
-		const deviationFromVWAP = Math.abs(currentPrice - vwapResult.vwap) / vwapResult.deviation;
+		const deviationFromVWAP =
+			Math.abs(currentPrice - vwapResult.vwap) / vwapResult.deviation;
 
 		if (deviationFromVWAP > reversionThreshold) {
 			if (currentPrice > vwapResult.vwap) {
@@ -309,13 +314,11 @@ export class VWAPCalculator {
 	}
 
 	// VWAP効率性の計算（価格変動に対する出来高の効率性）
-	public static calculateVWAPEfficiency(
-		priceData: PriceData[],
-	): number {
+	public static calculateVWAPEfficiency(priceData: PriceData[]): number {
 		if (priceData.length < 2) return 0;
 
 		const vwap = VWAPCalculator.calculate(priceData).vwap;
-		
+
 		let totalVolumeWeightedDeviation = 0;
 		let totalVolume = 0;
 
@@ -326,12 +329,11 @@ export class VWAPCalculator {
 			totalVolume += data.volume;
 		}
 
-		const avgWeightedDeviation = totalVolume > 0 
-			? totalVolumeWeightedDeviation / totalVolume 
-			: 0;
+		const avgWeightedDeviation =
+			totalVolume > 0 ? totalVolumeWeightedDeviation / totalVolume : 0;
 
 		// 効率性 = 1 / (平均乖離率 + 1)（0〜1の値）
-		return avgWeightedDeviation > 0 
+		return avgWeightedDeviation > 0
 			? Calculator.round(1 / (avgWeightedDeviation / vwap + 1), 4)
 			: 1;
 	}

@@ -1,6 +1,6 @@
 import { CalculationError } from "../types";
-import { Calculator } from "../utils/calculator";
 import type { PriceData } from "../types";
+import { Calculator } from "../utils/calculator";
 
 export interface StochasticResult {
 	k: number; // %K値（Fast Stochastic）
@@ -70,7 +70,9 @@ export class StochasticCalculator {
 
 		// 終値をHigh/Lowとして扱う簡易版
 		const priceData: PriceData[] = closePrices.map((close, index) => ({
-			date: new Date(Date.now() - (closePrices.length - index) * 24 * 60 * 60 * 1000),
+			date: new Date(
+				Date.now() - (closePrices.length - index) * 24 * 60 * 60 * 1000,
+			),
 			open: close,
 			high: close,
 			low: close,
@@ -92,8 +94,8 @@ export class StochasticCalculator {
 			const periodData = priceData.slice(i - period + 1, i + 1);
 
 			// 期間内の最高値と最安値を取得
-			const highest = Calculator.max(periodData.map(d => d.high));
-			const lowest = Calculator.min(periodData.map(d => d.low));
+			const highest = Calculator.max(periodData.map((d) => d.high));
+			const lowest = Calculator.min(periodData.map((d) => d.low));
 			const currentClose = priceData[i].close;
 
 			// %K = (現在の終値 - 最安値) / (最高値 - 最安値) * 100
@@ -144,7 +146,9 @@ export class StochasticCalculator {
 	}
 
 	// ストキャスティクスのシグナル判定
-	public static getSignal(result: StochasticResult): "buy" | "sell" | "neutral" {
+	public static getSignal(
+		result: StochasticResult,
+	): "buy" | "sell" | "neutral" {
 		const { k, d } = result;
 
 		// 買われすぎ・売られすぎの判定
@@ -229,7 +233,7 @@ export class StochasticCalculator {
 				kPeriod,
 				dPeriod,
 			);
-			const recentPrices = priceData.slice(-lookback).map(d => d.close);
+			const recentPrices = priceData.slice(-lookback).map((d) => d.close);
 			const recentK = stochArray.k.slice(-lookback);
 
 			if (recentPrices.length < 2 || recentK.length < 2) {

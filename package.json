@@ -9,6 +9,8 @@
 	"scripts": {
 		"dev": "tsx --watch ./src/index.ts",
 		"build": "esbuild src/index.ts --minify --bundle --platform=node --format=esm --outfile=build/index.js",
+		"test": "find tests -name '*.test.ts' -exec npx tsx --test {} +",
+		"test:individual": "npx tsx --test",
 		"lint": "biome lint src/",
 		"lint:fix": "biome lint src/ --write",
 		"format": "biome format src/ --write",
