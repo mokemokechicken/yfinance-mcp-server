@@ -6,8 +6,8 @@ import { z } from "zod";
 import yahooFinance from "yahoo-finance2";
 
 const server = new McpServer({
-	name: "yfinance",
-	version: "0.0.1",
+	name: "alt-yfinance",
+	version: "0.1.0",
 });
 
 // Add a stock price fetching tool
