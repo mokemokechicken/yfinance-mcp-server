@@ -87,17 +87,21 @@ export interface ExtendedIndicatorsResult {
 	crossDetection: import("./indicators/crossDetection").CrossDetectionResult;
 	volumeAnalysis: import("./indicators/volumeAnalysis").VolumeAnalysisResult;
 	vwap: import("./indicators/vwap").VWAPResult;
-	
+
 	// Phase3 財務拡張指標
 	rsiExtended: import("./financial-indicators/types").RSIExtendedResult;
-	movingAverageDeviations: import("./financial-indicators/types").MovingAverageDeviationResult[];
+	movingAverageDeviations: import(
+		"./financial-indicators/types",
+	).MovingAverageDeviationResult[];
 }
 
 // 包括的分析結果型
 export interface ComprehensiveStockAnalysisResult extends StockAnalysisResult {
 	// 財務指標
-	financialMetrics: import("./financial-indicators/types").FinancialMetricsResult | null;
-	
+	financialMetrics:
+		| import("./financial-indicators/types").FinancialMetricsResult
+		| null;
+
 	// 拡張テクニカル指標
 	extendedIndicators: ExtendedIndicatorsResult;
 }
