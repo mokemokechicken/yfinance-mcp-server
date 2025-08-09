@@ -14,17 +14,11 @@ export class RSICalculator {
 		ValidationUtils.validatePeriod(period, "period");
 		ValidationUtils.validatePeriod(warmupPeriod, "warmupPeriod");
 
-		// warmupPeriod < period の場合の調整
-		const effectiveWarmup = Math.max(warmupPeriod, period);
-		
-		const requiredLength = period + effectiveWarmup + 1;
-		ValidationUtils.validateDataLength(
-			prices.length,
-			requiredLength,
-			"price data for accurate RSI"
-		);
+		// 最小限必要なデータ長（period + 1）
+		ValidationUtils.validateDataLength(prices.length, period + 1);
 
-		// ウォームアップ期間を考慮した価格データを使用
+		// ウォームアップ期間を考慮（実用的な範囲で）
+		const effectiveWarmup = Math.min(warmupPeriod, prices.length - period - 1);
 		const warmupStartIndex = Math.max(
 			0,
 			prices.length - period - effectiveWarmup - 1,
@@ -61,7 +55,7 @@ export class RSICalculator {
 		if (avgGain === 0 && avgLoss === 0) {
 			return 50; // 変化なしの場合は中立値
 		}
-		
+
 		if (avgLoss === 0) {
 			return 100; // 下落がない場合RSI = 100
 		}
