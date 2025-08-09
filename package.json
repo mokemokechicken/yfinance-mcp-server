@@ -1,5 +1,5 @@
 {
-	"name": "@onori/yfinance-mcp-server",
+	"name": "@mokemokechicken/yfinance-mcp-server",
 	"version": "0.0.3",
 	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
 	"main": "build/index.js",
@@ -8,11 +8,19 @@
 	},
 	"scripts": {
 		"dev": "tsx --watch ./src/index.ts",
-		"build": "esbuild src/index.ts --minify --bundle --platform=node --format=esm --outfile=build/index.js"
+		"build": "esbuild src/index.ts --minify --bundle --platform=node --format=esm --outfile=build/index.js",
+		"test": "find tests -name '*.test.ts' -exec npx tsx --test {} +",
+		"test:individual": "npx tsx --test",
+		"lint": "biome lint src/",
+		"lint:fix": "biome lint src/ --write",
+		"format": "biome format src/ --write",
+		"check": "biome check src/",
+		"check:fix": "biome check src/ --write",
+		"typecheck": "tsc --noEmit"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/onori/yfinance-mcp-server.git"
+		"url": "git+https://github.com/mokemokechicken/yfinance-mcp-server.git"
 	},
 	"keywords": [
 		"yahoo-finance",
@@ -21,12 +29,10 @@
 		"finance",
 		"stock"
 	],
-	"author": "onori",
+	"author": "mokemokechicken",
 	"license": "ISC",
 	"type": "module",
-	"files": [
-		"build"
-	],
+	"files": ["build"],
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.8.0",
 		"yahoo-finance2": "^2.13.3",

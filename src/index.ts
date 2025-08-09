@@ -2,8 +2,8 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
 import yahooFinance from "yahoo-finance2";
+import { z } from "zod";
 
 const server = new McpServer({
 	name: "alt-yfinance",
@@ -26,13 +26,13 @@ server.tool(
 				interval: interval as "1d" | "1wk" | "1mo",
 			};
 
-			const result = await yahooFinance.historical(symbol, queryOptions);
+			const result = await yahooFinance.chart(symbol, queryOptions);
 
 			return {
 				content: [
 					{
 						type: "text",
-						text: JSON.stringify(result, null, 2),
+						text: JSON.stringify(result.quotes, null, 2),
 					},
 				],
 			};

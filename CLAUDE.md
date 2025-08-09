@@ -8,6 +8,12 @@ This is an unofficial Yahoo Finance API MCP (Model Context Protocol) server that
 ## Common Development Commands
 - `npm run build` - Build the project using esbuild (creates bundled output in build/index.js)
 - `npm run dev` - Start development server with file watching using tsx
+- `npm run lint` - Run Biome linter on src/ folder
+- `npm run lint:fix` - Run Biome linter with automatic fixes
+- `npm run format` - Format code using Biome
+- `npm run check` - Run Biome lint and format checks
+- `npm run check:fix` - Run Biome lint and format with automatic fixes
+- `npm run typecheck` - Run TypeScript type checking
 - `npm install` - Install dependencies
 
 ## Project Architecture
@@ -19,7 +25,7 @@ This is an unofficial Yahoo Finance API MCP (Model Context Protocol) server that
 
 ## Code Style & Tools
 - **Linter/Formatter**: Uses Biome with tab indentation and double quotes
-- **TypeScript**: Configured for ES2022 with Node16 module resolution
+- **TypeScript**: Configured for ES2022 with bundler module resolution (Node20+ compatible)
 - **Build Tool**: esbuild for bundling and minification
 
 ## Key Implementation Details

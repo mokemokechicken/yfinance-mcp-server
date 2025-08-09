@@ -22,7 +22,7 @@ Example Cursor MCP Client.
     "yfinance": {
       "command": "npx",
       "args": [
-        "@onori/yfinance-mcp-server"
+        "@mokemokechicken/yfinance-mcp-server"
       ]
     }
   }
