@@ -25,17 +25,19 @@ import {
 } from "../src/lib/technical-indicators";
 
 // 統合テクニカル指標テスト
-async function testAllTechnicalIndicators() {
+async function testAllTechnicalIndicators(symbol?: string) {
+	const stockSymbol = symbol || "6301.T"; // デフォルトはコマツ
+	
 	console.log("=".repeat(70));
 	console.log("🚀 統合テクニカル指標テスト - 全機能デモンストレーション");
 	console.log("=".repeat(70));
 
 	try {
 		// 実データでのテスト
-		console.log("📊 コマツ(6301.T)の実データ分析...");
+		console.log(`📊 ${stockSymbol}の実データ分析...`);
 		const startTime = Date.now();
 		
-		const priceData = await TechnicalAnalyzer.fetchData("6301.T", "14d");
+		const priceData = await TechnicalAnalyzer.fetchData(stockSymbol, "14d");
 		const closePrices = priceData.map(d => d.close);
 		
 		console.log("\n📊 直近14日のRawデータ:");
@@ -55,7 +57,7 @@ async function testAllTechnicalIndicators() {
 		await testAdvancedIndicators(priceData, closePrices);
 
 		// === 統合分析結果 ===
-		await testIntegratedAnalysis();
+		await testIntegratedAnalysis(stockSymbol);
 
 	} catch (error: any) {
 		console.error("❌ 実データテストでエラー:", error.message);
@@ -218,12 +220,14 @@ async function testAdvancedIndicators(priceData: PriceData[], closePrices: numbe
 }
 
 // 統合分析のテスト
-async function testIntegratedAnalysis() {
+async function testIntegratedAnalysis(symbol?: string) {
+	const stockSymbol = symbol || "6301.T"; // デフォルトはコマツ
+	
 	console.log("🎯 **統合分析結果**");
 	console.log("-".repeat(50));
 
 	try {
-		const result: StockAnalysisResult = await TechnicalAnalyzer.analyzeStock("6301.T", "1y");
+		const result: StockAnalysisResult = await TechnicalAnalyzer.analyzeStock(stockSymbol, "1y");
 		
 		console.log("📊 総合分析レポート:");
 		console.log(`銘柄: ${result.symbol} (${result.companyName})`);
@@ -446,12 +450,20 @@ function displayFeatureSummary() {
 
 // メイン実行
 async function main() {
+	const stockSymbol = process.argv[2]; // コマンドライン引数から銘柄コードを取得
+	
 	displayFeatureSummary();
 	
 	console.log("🎬 統合テクニカル指標テスト開始\n");
+	if (stockSymbol) {
+		console.log(`📊 指定された銘柄: ${stockSymbol}\n`);
+	} else {
+		console.log("📊 デフォルト銘柄: 6301.T (コマツ)\n");
+	}
+	
 	const startTime = Date.now();
 
-	await testAllTechnicalIndicators();
+	await testAllTechnicalIndicators(stockSymbol);
 
 	const endTime = Date.now();
 	console.log("=".repeat(70));
