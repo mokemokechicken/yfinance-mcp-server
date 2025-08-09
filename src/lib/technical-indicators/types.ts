@@ -78,3 +78,30 @@ export interface IndicatorConfig {
 		percentage: number;
 	};
 }
+
+// 拡張指標結果型（spike_all_features.ts の全機能対応）
+export interface ExtendedIndicatorsResult {
+	// Phase2 拡張指標
+	bollingerBands: import("./indicators/bollingerBands").BollingerBandsResult;
+	stochastic: import("./indicators/stochastic").StochasticResult;
+	crossDetection: import("./indicators/crossDetection").CrossDetectionResult;
+	volumeAnalysis: import("./indicators/volumeAnalysis").VolumeAnalysisResult;
+	vwap: import("./indicators/vwap").VWAPResult;
+
+	// Phase3 財務拡張指標
+	rsiExtended: import("./financial-indicators/types").RSIExtendedResult;
+	movingAverageDeviations: import(
+		"./financial-indicators/types",
+	).MovingAverageDeviationResult[];
+}
+
+// 包括的分析結果型
+export interface ComprehensiveStockAnalysisResult extends StockAnalysisResult {
+	// 財務指標
+	financialMetrics:
+		| import("./financial-indicators/types").FinancialMetricsResult
+		| null;
+
+	// 拡張テクニカル指標
+	extendedIndicators: ExtendedIndicatorsResult;
+}

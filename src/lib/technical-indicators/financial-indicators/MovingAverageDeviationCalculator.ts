@@ -238,7 +238,7 @@ export class MovingAverageDeviationCalculator {
 
 		// トレンド判定（線形回帰の傾き）
 		const n = deviationHistory.length;
-		
+
 		// n=1の場合は傾きを計算できないので安定と判定
 		if (n < 2) {
 			return {

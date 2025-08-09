@@ -19,7 +19,10 @@ export class MovingAverageCalculator {
 
 	// 表示用の移動平均（丸め処理あり）
 	public static calculateRounded(prices: number[], period: number): number {
-		return Calculator.round(MovingAverageCalculator.calculate(prices, period), 3);
+		return Calculator.round(
+			MovingAverageCalculator.calculate(prices, period),
+			3,
+		);
 	}
 
 	// 複数期間の移動平均を一度に計算
@@ -57,7 +60,10 @@ export class MovingAverageCalculator {
 
 	// 表示用のEMA（丸め処理あり）
 	public static calculateEMARounded(prices: number[], period: number): number {
-		return Calculator.round(MovingAverageCalculator.calculateEMA(prices, period), 3);
+		return Calculator.round(
+			MovingAverageCalculator.calculateEMA(prices, period),
+			3,
+		);
 	}
 
 	// 移動平均の配列を計算（全期間、統一バリデーション）
@@ -75,9 +81,12 @@ export class MovingAverageCalculator {
 	}
 
 	// 表示用の移動平均配列（丸め処理あり）
-	public static calculateArrayRounded(prices: number[], period: number): number[] {
-		return MovingAverageCalculator.calculateArray(prices, period).map((value) => 
-			Calculator.round(value, 3)
+	public static calculateArrayRounded(
+		prices: number[],
+		period: number,
+	): number[] {
+		return MovingAverageCalculator.calculateArray(prices, period).map((value) =>
+			Calculator.round(value, 3),
 		);
 	}
 

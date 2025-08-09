@@ -2,15 +2,25 @@ import yahooFinance from "yahoo-finance2";
 import { MACDCalculator } from "./indicators/macd";
 import { MovingAverageCalculator } from "./indicators/movingAverage";
 import { RSICalculator } from "./indicators/rsi";
+import { BollingerBandsCalculator } from "./indicators/bollingerBands";
+import { StochasticCalculator } from "./indicators/stochastic";
+import { CrossDetectionCalculator } from "./indicators/crossDetection";
+import { VolumeAnalysisCalculator } from "./indicators/volumeAnalysis";
+import { VWAPCalculator } from "./indicators/vwap";
+import { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
+import { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
 import {
 	DataFetchError,
 	type IndicatorConfig,
 	type PriceData,
 	type StockAnalysisResult,
 	type TechnicalIndicators,
+	type ComprehensiveStockAnalysisResult,
+	type ExtendedIndicatorsResult,
 } from "./types";
 import { Calculator } from "./utils/calculator";
 import { DataProcessor } from "./utils/dataProcessor";
+import { generateJapaneseReport } from "./utils/japaneseReportGenerator";
 
 // デフォルト設定
 const DEFAULT_CONFIG: IndicatorConfig = {
@@ -384,5 +394,145 @@ export class TechnicalAnalyzer {
 		const priceData = await TechnicalAnalyzer.fetchData(symbol, period);
 		const analyzer = new TechnicalAnalyzer(priceData, config);
 		return analyzer.analyze(symbol);
+	}
+
+	// 新規：包括的分析メソッド（API呼び出し最小化）
+	public static async analyzeStockComprehensive(
+		symbol: string,
+		period = "1y",
+		includeFinancials = true,
+	): Promise<ComprehensiveStockAnalysisResult> {
+		// API呼び出し最小化：並列取得
+		const [priceData, financialMetrics] = await Promise.all([
+			TechnicalAnalyzer.fetchData(symbol, period),
+			includeFinancials
+				? FinancialAnalyzer.getFinancialMetrics(symbol).catch(() => null)
+				: Promise.resolve(null),
+		]);
+
+		// 基本分析実行
+		const analyzer = new TechnicalAnalyzer(priceData);
+		const baseResult = analyzer.analyze(symbol);
+
+		// 拡張指標計算
+		const extendedIndicators = analyzer.calculateExtendedIndicators();
+
+		return {
+			...baseResult,
+			financialMetrics,
+			extendedIndicators,
+		};
+	}
+
+	// 新規：拡張指標計算メソッド（Graceful Degradation対応）
+	public calculateExtendedIndicators(): ExtendedIndicatorsResult {
+		const closePrices = DataProcessor.extractClosePrices(this.priceData);
+
+		// 各指標を安全に計算（エラーが発生しても他の指標は継続）
+		const safeCalculate = <T>(
+			calculationFn: () => T,
+			fallbackFn: () => T,
+			indicatorName: string,
+		): T => {
+			try {
+				return calculationFn();
+			} catch (error) {
+				console.warn(`${indicatorName} calculation failed:`, error);
+				return fallbackFn();
+			}
+		};
+
+		// Phase2: 拡張指標計算（Graceful Degradation）
+		const bollingerBands = safeCalculate(
+			() => BollingerBandsCalculator.calculate(closePrices, 20, 2),
+			() => ({ upper: 0, middle: 0, lower: 0, bandwidth: 0, percentB: 0 }),
+			"ボリンジャーバンド",
+		);
+
+		const stochastic = safeCalculate(
+			() => StochasticCalculator.calculateWithOHLC(this.priceData, 14, 3),
+			() => ({ k: 0, d: 0 }),
+			"ストキャスティクス",
+		);
+
+		const crossDetection = safeCalculate(
+			() => CrossDetectionCalculator.detectCross(closePrices, 25, 50, 3),
+			() => ({
+				type: "none" as const,
+				shortMA: 0,
+				longMA: 0,
+				crossPoint: 0,
+				strength: "weak" as const,
+				confirmationDays: 0,
+			}),
+			"クロス検出",
+		);
+
+		const volumeAnalysis = safeCalculate(
+			() => VolumeAnalysisCalculator.calculate(this.priceData, 20),
+			() => ({
+				averageVolume: 0,
+				relativeVolume: 0,
+				volumeTrend: "stable" as const,
+				volumeSpike: false,
+				priceVolumeStrength: "weak" as const,
+				accumulation: "neutral" as const,
+			}),
+			"出来高分析",
+		);
+
+		const vwap = safeCalculate(
+			() => VWAPCalculator.calculate(this.priceData, 1),
+			() => ({
+				vwap: 0,
+				upperBand: 0,
+				lowerBand: 0,
+				deviation: 0,
+				position: "at" as const,
+				strength: "weak" as const,
+				trend: "neutral" as const,
+			}),
+			"VWAP",
+		);
+
+		// Phase3: 財務拡張指標（Graceful Degradation）
+		const rsiExtended = safeCalculate(
+			() => RSICalculator.calculateExtended(closePrices),
+			() => ({
+				rsi14: 0,
+				rsi21: 0,
+				signal14: "neutral" as const,
+				signal21: "neutral" as const,
+			}),
+			"RSI拡張版",
+		);
+
+		const movingAverageDeviations = [25, 50, 200]
+			.map((period) =>
+				safeCalculate(
+					() => MovingAverageDeviationCalculator.calculate(closePrices, period),
+					() => null,
+					`移動平均乖離率(${period}日)`,
+				),
+			)
+			.filter((result) => result !== null);
+
+		return {
+			bollingerBands,
+			stochastic,
+			crossDetection,
+			volumeAnalysis,
+			vwap,
+			rsiExtended,
+			movingAverageDeviations,
+		};
+	}
+
+	// 新規：日本語レポート生成メソッド
+	public static generateJapaneseReportFromAnalysis(
+		analysis: ComprehensiveStockAnalysisResult,
+		days: number,
+	): string {
+		return generateJapaneseReport(analysis, days);
 	}
 }
