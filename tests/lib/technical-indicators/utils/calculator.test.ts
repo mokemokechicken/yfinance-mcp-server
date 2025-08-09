@@ -23,24 +23,47 @@ describe("Calculator", () => {
 	});
 
 	describe("exponentialMovingAverage", () => {
-		it("空配列の場合空配列を返す", () => {
-			const result = Calculator.exponentialMovingAverage([], 10);
+		it("空配列の場合エラーを投げる", () => {
+			assert.throws(() => {
+				Calculator.exponentialMovingAverage([], 10);
+			}, /Prices array cannot be empty/);
+		});
+
+		it("データ不足の場合空配列を返す", () => {
+			const values = [22, 23]; // period=3より短い
+			const result = Calculator.exponentialMovingAverage(values, 3);
 			assert.deepStrictEqual(result, []);
 		});
 
-		it("正しいEMAを計算する", () => {
+		it("正しいEMAを計算する（業界標準実装）", () => {
 			const values = [22, 23, 24, 25, 26];
 			const period = 3;
 			const result = Calculator.exponentialMovingAverage(values, period);
 
-			// 最初の値は元の値と同じ
-			assert.strictEqual(result[0], 22);
-			// 配列長は元と同じ
-			assert.strictEqual(result.length, values.length);
+			// 最初の値は最初のperiod分のSMA: (22+23+24)/3 = 23
+			assert.strictEqual(result[0], 23);
+			
+			// 配列長は values.length - period + 1
+			assert.strictEqual(result.length, values.length - period + 1);
+			
 			// 単調増加している（この例の場合）
 			for (let i = 1; i < result.length; i++) {
 				assert.ok(result[i] > result[i - 1]);
 			}
+		});
+
+		it("無効なperiodでエラーを投げる", () => {
+			const values = [22, 23, 24, 25, 26];
+			assert.throws(() => {
+				Calculator.exponentialMovingAverage(values, 0);
+			}, /period must be a positive integer/);
+		});
+
+		it("非有限値を含む配列でエラーを投げる", () => {
+			const values = [22, Number.NaN, 24, 25, 26];
+			assert.throws(() => {
+				Calculator.exponentialMovingAverage(values, 3);
+			}, /Prices must contain only finite numbers/);
 		});
 	});
 
@@ -63,6 +86,18 @@ describe("Calculator", () => {
 			const values = [1, 2, 3, 4, 5];
 			const result = Calculator.simpleMovingAverage(values, 1);
 			assert.deepStrictEqual(result, values);
+		});
+
+		it("空配列の場合エラーを投げる", () => {
+			assert.throws(() => {
+				Calculator.simpleMovingAverage([], 3);
+			}, /Prices array cannot be empty/);
+		});
+
+		it("無効なperiodでエラーを投げる", () => {
+			assert.throws(() => {
+				Calculator.simpleMovingAverage([1, 2, 3], 0);
+			}, /period must be a positive integer/);
 		});
 	});
 

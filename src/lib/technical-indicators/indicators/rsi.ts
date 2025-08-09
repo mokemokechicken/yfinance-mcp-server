@@ -3,7 +3,11 @@ import { Calculator } from "../utils/calculator";
 
 export class RSICalculator {
 	// RSI計算のメインメソッド（ウォームアップ期間を考慮）
-	public static calculate(prices: number[], period = 14, warmupPeriod = 100): number {
+	public static calculate(
+		prices: number[],
+		period = 14,
+		warmupPeriod = 100,
+	): number {
 		if (!Array.isArray(prices) || prices.length === 0) {
 			throw new CalculationError(
 				"Prices array is empty or invalid",
@@ -20,9 +24,12 @@ export class RSICalculator {
 		}
 
 		// ウォームアップ期間を考慮した価格データを使用
-		const warmupStartIndex = Math.max(0, prices.length - period - warmupPeriod - 1);
+		const warmupStartIndex = Math.max(
+			0,
+			prices.length - period - warmupPeriod - 1,
+		);
 		const effectivePrices = prices.slice(warmupStartIndex);
-		
+
 		// 価格変動の計算
 		const priceChanges = RSICalculator.calculatePriceChanges(effectivePrices);
 

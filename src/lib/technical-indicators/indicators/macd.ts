@@ -1,5 +1,6 @@
 import { CalculationError } from "../types";
 import { Calculator } from "../utils/calculator";
+import { ValidationUtils } from "../utils/validation";
 
 export interface MACDResult {
 	macd: number;
@@ -8,51 +9,60 @@ export interface MACDResult {
 }
 
 export class MACDCalculator {
-	// MACD計算のメインメソッド
+	// MACD計算のメインメソッド（修正版）
 	public static calculate(
 		prices: number[],
 		fastPeriod = 12,
 		slowPeriod = 26,
 		signalPeriod = 9,
 	): MACDResult {
-		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
+		// 入力検証（強化版）
+		ValidationUtils.validatePricesArray(prices);
+		ValidationUtils.validatePeriodRelationship(fastPeriod, slowPeriod);
+		ValidationUtils.validatePeriod(signalPeriod, "signalPeriod");
+
+		const minRequiredLength = slowPeriod + signalPeriod;
+		ValidationUtils.validateDataLength(
+			prices.length,
+			minRequiredLength,
+			"price data",
+		);
+
+		// EMA計算（修正版Calculator使用）
+		const fastEMA = Calculator.exponentialMovingAverage(prices, fastPeriod);
+		const slowEMA = Calculator.exponentialMovingAverage(prices, slowPeriod);
+
+		// 同じ日付の値で差分計算（修正版）
+		const alignedLength = Math.min(fastEMA.length, slowEMA.length);
+		const macdLine: number[] = [];
+
+		for (let i = 0; i < alignedLength; i++) {
+			macdLine.push(fastEMA[i] - slowEMA[i]); // 同一インデックス = 同一日付
 		}
 
-		const minRequiredLength = Math.max(slowPeriod, fastPeriod) + signalPeriod;
-		if (prices.length < minRequiredLength) {
+		// シグナル計算
+		if (macdLine.length < signalPeriod) {
 			throw new CalculationError(
-				`Not enough data points. Need ${minRequiredLength}, got ${prices.length}`,
+				`Insufficient MACD data for signal: need ${signalPeriod}, got ${macdLine.length}`,
 				"INSUFFICIENT_DATA",
 			);
 		}
 
-		// 短期EMA(12日)と長期EMA(26日)の計算
-		const fastEMA = Calculator.exponentialMovingAverage(prices, fastPeriod);
-		const slowEMA = Calculator.exponentialMovingAverage(prices, slowPeriod);
-
-		// MACD = 短期EMA - 長期EMA
-		const macdLine: number[] = [];
-		const startIndex = slowPeriod - fastPeriod; // 長期EMAに合わせる
-
-		for (let i = startIndex; i < fastEMA.length; i++) {
-			macdLine.push(fastEMA[i] - slowEMA[i - startIndex]);
-		}
-
-		// Signal = MACDの9日EMA
 		const signalLine = Calculator.exponentialMovingAverage(
 			macdLine,
 			signalPeriod,
 		);
 
-		// 最新の値を取得
+		// 最新値取得（安全に）
+		if (macdLine.length === 0 || signalLine.length === 0) {
+			throw new CalculationError(
+				"No valid MACD or signal data",
+				"CALCULATION_FAILED",
+			);
+		}
+
 		const macd = Calculator.round(macdLine[macdLine.length - 1], 3);
 		const signal = Calculator.round(signalLine[signalLine.length - 1], 3);
-
-		// Histogram = MACD - Signal
 		const histogram = Calculator.round(macd - signal, 3);
 
 		return {
@@ -62,7 +72,7 @@ export class MACDCalculator {
 		};
 	}
 
-	// MACD配列の計算（全期間）
+	// MACD配列の計算（全期間）- 修正版
 	public static calculateArray(
 		prices: number[],
 		fastPeriod = 12,
@@ -73,14 +83,12 @@ export class MACDCalculator {
 		signal: number[];
 		histogram: number[];
 	} {
-		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
-		}
+		// 入力検証（統一）
+		ValidationUtils.validatePricesArray(prices);
+		ValidationUtils.validatePeriodRelationship(fastPeriod, slowPeriod);
+		ValidationUtils.validatePeriod(signalPeriod, "signalPeriod");
 
-		const minRequiredLength = Math.max(slowPeriod, fastPeriod) + signalPeriod;
+		const minRequiredLength = slowPeriod + signalPeriod;
 		if (prices.length < minRequiredLength) {
 			return {
 				macd: [],
@@ -89,30 +97,38 @@ export class MACDCalculator {
 			};
 		}
 
-		// 短期EMAと長期EMAの計算
+		// EMA計算
 		const fastEMA = Calculator.exponentialMovingAverage(prices, fastPeriod);
 		const slowEMA = Calculator.exponentialMovingAverage(prices, slowPeriod);
 
-		// MACDライン計算
+		// 同一日付での差分計算（修正版）
+		const alignedLength = Math.min(fastEMA.length, slowEMA.length);
 		const macdLine: number[] = [];
-		const startIndex = slowPeriod - fastPeriod;
 
-		for (let i = startIndex; i < fastEMA.length; i++) {
-			macdLine.push(fastEMA[i] - slowEMA[i - startIndex]);
+		for (let i = 0; i < alignedLength; i++) {
+			macdLine.push(fastEMA[i] - slowEMA[i]); // 同一インデックス = 同一日付
 		}
 
 		// シグナルライン計算
+		if (macdLine.length < signalPeriod) {
+			return {
+				macd: [],
+				signal: [],
+				histogram: [],
+			};
+		}
+
 		const signalLine = Calculator.exponentialMovingAverage(
 			macdLine,
 			signalPeriod,
 		);
 
-		// ヒストグラム計算
+		// ヒストグラム計算（修正版）
 		const histogram: number[] = [];
+		const signalStartIndex = macdLine.length - signalLine.length;
+
 		for (let i = 0; i < signalLine.length; i++) {
-			histogram.push(
-				macdLine[i + (macdLine.length - signalLine.length)] - signalLine[i],
-			);
+			histogram.push(macdLine[signalStartIndex + i] - signalLine[i]);
 		}
 
 		return {

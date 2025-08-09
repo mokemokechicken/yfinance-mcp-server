@@ -30,6 +30,7 @@ export type { VWAPResult } from "./indicators/vwap";
 // ユーティリティエクスポート
 export { Calculator } from "./utils/calculator";
 export { DataProcessor } from "./utils/dataProcessor";
+export { ValidationUtils } from "./utils/validation";
 
 // エラークラスエクスポート
 export {

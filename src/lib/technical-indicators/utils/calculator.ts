@@ -1,3 +1,5 @@
+import { ValidationUtils } from "./validation";
+
 export class Calculator {
 	// 標準偏差計算
 	public static standardDeviation(values: number[]): number {
@@ -10,25 +12,37 @@ export class Calculator {
 		return Math.sqrt(variance);
 	}
 
-	// 指数移動平均計算
+	// 指数移動平均計算（業界標準実装）
 	public static exponentialMovingAverage(
 		values: number[],
 		period: number,
 	): number[] {
-		if (values.length === 0) return [];
+		// 入力検証
+		ValidationUtils.validatePricesArray(values);
+		ValidationUtils.validatePeriod(period);
+
+		// データ長チェック
+		if (values.length < period) {
+			return [];
+		}
 
 		const ema: number[] = [];
 		const multiplier = 2 / (period + 1);
 
-		// 最初の値はシンプル移動平均
-		ema[0] = values[0];
+		// 標準的な初期値計算: 最初のperiod分の単純平均
+		const initialSMA =
+			values.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
 
-		// 2番目以降はEMA計算
-		for (let i = 1; i < values.length; i++) {
+		// period-1番目に初期値をセット（標準実装）
+		ema[period - 1] = initialSMA;
+
+		// period番目以降をEMA計算
+		for (let i = period; i < values.length; i++) {
 			ema[i] = values[i] * multiplier + ema[i - 1] * (1 - multiplier);
 		}
 
-		return ema;
+		// 有効な値のみ返却（period-1以降）
+		return ema.slice(period - 1);
 	}
 
 	// シンプル移動平均計算
@@ -36,6 +50,10 @@ export class Calculator {
 		values: number[],
 		period: number,
 	): number[] {
+		// 入力検証（統一）
+		ValidationUtils.validatePricesArray(values);
+		ValidationUtils.validatePeriod(period);
+
 		if (values.length < period) return [];
 
 		const sma: number[] = [];
