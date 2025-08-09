@@ -11,13 +11,13 @@ export interface PriceData {
 // テクニカル指標の結果型
 export interface TechnicalIndicators {
 	movingAverages: {
-		ma25: number;
-		ma50: number;
-		ma200: number;
+		ma25: number | undefined;
+		ma50: number | undefined;
+		ma200: number | undefined;
 	};
 	rsi: {
-		rsi14: number;
-		rsi21: number;
+		rsi14: number | undefined;
+		rsi21: number | undefined;
 	};
 	macd: {
 		macd: number;
@@ -47,7 +47,10 @@ export interface StockAnalysisResult {
 
 // エラー関連の型
 export class TechnicalIndicatorError extends Error {
-	constructor(message: string, public code: string) {
+	constructor(
+		message: string,
+		public code: string,
+	) {
 		super(message);
 	}
 }

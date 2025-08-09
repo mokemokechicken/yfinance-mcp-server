@@ -1,5 +1,5 @@
-import { Calculator } from "../utils/calculator";
 import { CalculationError } from "../types";
+import { Calculator } from "../utils/calculator";
 
 export interface MACDResult {
 	macd: number;
@@ -11,19 +11,22 @@ export class MACDCalculator {
 	// MACD計算のメインメソッド
 	public static calculate(
 		prices: number[],
-		fastPeriod: number = 12,
-		slowPeriod: number = 26,
-		signalPeriod: number = 9
+		fastPeriod = 12,
+		slowPeriod = 26,
+		signalPeriod = 9,
 	): MACDResult {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
+			throw new CalculationError(
+				"Prices array is empty or invalid",
+				"INVALID_PRICES",
+			);
 		}
 
 		const minRequiredLength = Math.max(slowPeriod, fastPeriod) + signalPeriod;
 		if (prices.length < minRequiredLength) {
 			throw new CalculationError(
 				`Not enough data points. Need ${minRequiredLength}, got ${prices.length}`,
-				"INSUFFICIENT_DATA"
+				"INSUFFICIENT_DATA",
 			);
 		}
 
@@ -40,7 +43,10 @@ export class MACDCalculator {
 		}
 
 		// Signal = MACDの9日EMA
-		const signalLine = Calculator.exponentialMovingAverage(macdLine, signalPeriod);
+		const signalLine = Calculator.exponentialMovingAverage(
+			macdLine,
+			signalPeriod,
+		);
 
 		// 最新の値を取得
 		const macd = Calculator.round(macdLine[macdLine.length - 1], 3);
@@ -59,16 +65,19 @@ export class MACDCalculator {
 	// MACD配列の計算（全期間）
 	public static calculateArray(
 		prices: number[],
-		fastPeriod: number = 12,
-		slowPeriod: number = 26,
-		signalPeriod: number = 9
+		fastPeriod = 12,
+		slowPeriod = 26,
+		signalPeriod = 9,
 	): {
 		macd: number[];
 		signal: number[];
 		histogram: number[];
 	} {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
+			throw new CalculationError(
+				"Prices array is empty or invalid",
+				"INVALID_PRICES",
+			);
 		}
 
 		const minRequiredLength = Math.max(slowPeriod, fastPeriod) + signalPeriod;
@@ -93,25 +102,30 @@ export class MACDCalculator {
 		}
 
 		// シグナルライン計算
-		const signalLine = Calculator.exponentialMovingAverage(macdLine, signalPeriod);
+		const signalLine = Calculator.exponentialMovingAverage(
+			macdLine,
+			signalPeriod,
+		);
 
 		// ヒストグラム計算
 		const histogram: number[] = [];
 		for (let i = 0; i < signalLine.length; i++) {
 			histogram.push(
-				macdLine[i + (macdLine.length - signalLine.length)] - signalLine[i]
+				macdLine[i + (macdLine.length - signalLine.length)] - signalLine[i],
 			);
 		}
 
 		return {
-			macd: macdLine.map(value => Calculator.round(value, 3)),
-			signal: signalLine.map(value => Calculator.round(value, 3)),
-			histogram: histogram.map(value => Calculator.round(value, 3)),
+			macd: macdLine.map((value) => Calculator.round(value, 3)),
+			signal: signalLine.map((value) => Calculator.round(value, 3)),
+			histogram: histogram.map((value) => Calculator.round(value, 3)),
 		};
 	}
 
 	// MACDシグナルの判定
-	public static getSignal(macdResult: MACDResult): "bullish" | "bearish" | "neutral" {
+	public static getSignal(
+		macdResult: MACDResult,
+	): "bullish" | "bearish" | "neutral" {
 		const { macd, signal, histogram } = macdResult;
 
 		// ヒストグラムが正でMACDがシグナルより上 → 強気
@@ -130,12 +144,17 @@ export class MACDCalculator {
 	// MACDクロスの検出
 	public static detectCross(
 		prices: number[],
-		fastPeriod: number = 12,
-		slowPeriod: number = 26,
-		signalPeriod: number = 9
+		fastPeriod = 12,
+		slowPeriod = 26,
+		signalPeriod = 9,
 	): "bullish_cross" | "bearish_cross" | "none" {
 		try {
-			const macdArray = this.calculateArray(prices, fastPeriod, slowPeriod, signalPeriod);
+			const macdArray = MACDCalculator.calculateArray(
+				prices,
+				fastPeriod,
+				slowPeriod,
+				signalPeriod,
+			);
 
 			if (macdArray.macd.length < 2 || macdArray.signal.length < 2) {
 				return "none";
@@ -165,18 +184,24 @@ export class MACDCalculator {
 	// MACDの発散（ダイバージェンス）検出
 	public static detectDivergence(
 		prices: number[],
-		fastPeriod: number = 12,
-		slowPeriod: number = 26,
-		signalPeriod: number = 9,
-		lookback: number = 10
+		fastPeriod = 12,
+		slowPeriod = 26,
+		signalPeriod = 9,
+		lookback = 10,
 	): "bullish" | "bearish" | "none" {
 		try {
-			const requiredLength = Math.max(slowPeriod, fastPeriod) + signalPeriod + lookback;
+			const requiredLength =
+				Math.max(slowPeriod, fastPeriod) + signalPeriod + lookback;
 			if (prices.length < requiredLength) {
 				return "none";
 			}
 
-			const macdArray = this.calculateArray(prices, fastPeriod, slowPeriod, signalPeriod);
+			const macdArray = MACDCalculator.calculateArray(
+				prices,
+				fastPeriod,
+				slowPeriod,
+				signalPeriod,
+			);
 			const recentPrices = prices.slice(-lookback);
 			const recentMACD = macdArray.macd.slice(-lookback);
 
@@ -211,16 +236,20 @@ export class MACDCalculator {
 	}
 
 	// MACDのモメンタム判定
-	public static getMomentum(macdResult: MACDResult): "accelerating" | "decelerating" | "neutral" {
+	public static getMomentum(
+		macdResult: MACDResult,
+	): "accelerating" | "decelerating" | "neutral" {
 		const { histogram } = macdResult;
 
-		if (histogram > 0.5) return "accelerating";    // 加速中
-		if (histogram < -0.5) return "decelerating";   // 減速中
+		if (histogram > 0.5) return "accelerating"; // 加速中
+		if (histogram < -0.5) return "decelerating"; // 減速中
 		return "neutral";
 	}
 
 	// MACDの強度判定
-	public static getStrength(macdResult: MACDResult): "strong" | "moderate" | "weak" {
+	public static getStrength(
+		macdResult: MACDResult,
+	): "strong" | "moderate" | "weak" {
 		const { macd, signal, histogram } = macdResult;
 
 		const macdAbs = Math.abs(macd);

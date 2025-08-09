@@ -1,8 +1,17 @@
-import { PriceData, ValidationError } from "../types";
+import { type PriceData, ValidationError } from "../types";
+
+interface RawPriceData {
+	date: Date;
+	open: number;
+	high: number;
+	low: number;
+	close: number;
+	volume?: number;
+}
 
 export class DataProcessor {
 	// Yahoo Financeの生データを内部形式に変換
-	public static processRawData(rawData: any[]): PriceData[] {
+	public static processRawData(rawData: RawPriceData[]): PriceData[] {
 		if (!Array.isArray(rawData) || rawData.length === 0) {
 			throw new ValidationError("Invalid raw data provided", "INVALID_DATA");
 		}
@@ -18,7 +27,10 @@ export class DataProcessor {
 					volume: Number(item.volume || 0),
 				};
 			} catch (error) {
-				throw new ValidationError(`Invalid data at index ${index}`, "DATA_CONVERSION_ERROR");
+				throw new ValidationError(
+					`Invalid data at index ${index}`,
+					"DATA_CONVERSION_ERROR",
+				);
 			}
 		});
 	}
@@ -37,7 +49,12 @@ export class DataProcessor {
 			const item = cleaned[i];
 
 			// NaN値のチェック
-			if (isNaN(item.open) || isNaN(item.high) || isNaN(item.low) || isNaN(item.close)) {
+			if (
+				Number.isNaN(item.open) ||
+				Number.isNaN(item.high) ||
+				Number.isNaN(item.low) ||
+				Number.isNaN(item.close)
+			) {
 				if (i > 0) {
 					// 前の値で補完
 					const prev = cleaned[i - 1];
@@ -48,7 +65,7 @@ export class DataProcessor {
 				} else {
 					// 最初の行の場合、次の有効な値を探す
 					for (let j = i + 1; j < cleaned.length; j++) {
-						if (!isNaN(cleaned[j].close)) {
+						if (!Number.isNaN(cleaned[j].close)) {
 							item.open = cleaned[j].close;
 							item.high = cleaned[j].close;
 							item.low = cleaned[j].close;
@@ -85,34 +102,41 @@ export class DataProcessor {
 			return false;
 		}
 
-		return data.every(item => {
-			return item.date instanceof Date &&
-				   typeof item.open === 'number' && !isNaN(item.open) &&
-				   typeof item.high === 'number' && !isNaN(item.high) &&
-				   typeof item.low === 'number' && !isNaN(item.low) &&
-				   typeof item.close === 'number' && !isNaN(item.close) &&
-				   typeof item.volume === 'number' && !isNaN(item.volume);
+		return data.every((item) => {
+			return (
+				item.date instanceof Date &&
+				typeof item.open === "number" &&
+				!Number.isNaN(item.open) &&
+				typeof item.high === "number" &&
+				!Number.isNaN(item.high) &&
+				typeof item.low === "number" &&
+				!Number.isNaN(item.low) &&
+				typeof item.close === "number" &&
+				!Number.isNaN(item.close) &&
+				typeof item.volume === "number" &&
+				!Number.isNaN(item.volume)
+			);
 		});
 	}
 
 	// 終値データの抽出
 	public static extractClosePrices(data: PriceData[]): number[] {
-		return data.map(item => item.close);
+		return data.map((item) => item.close);
 	}
 
 	// 高値データの抽出
 	public static extractHighPrices(data: PriceData[]): number[] {
-		return data.map(item => item.high);
+		return data.map((item) => item.high);
 	}
 
 	// 安値データの抽出
 	public static extractLowPrices(data: PriceData[]): number[] {
-		return data.map(item => item.low);
+		return data.map((item) => item.low);
 	}
 
 	// 出来高データの抽出
 	public static extractVolumes(data: PriceData[]): number[] {
-		return data.map(item => item.volume);
+		return data.map((item) => item.volume);
 	}
 
 	// 指定期間のデータを取得

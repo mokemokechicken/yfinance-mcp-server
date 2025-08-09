@@ -1,20 +1,26 @@
-import { Calculator } from "../utils/calculator";
 import { CalculationError } from "../types";
+import { Calculator } from "../utils/calculator";
 
 export class RSICalculator {
 	// RSI計算のメインメソッド
-	public static calculate(prices: number[], period: number = 14): number {
+	public static calculate(prices: number[], period = 14): number {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
+			throw new CalculationError(
+				"Prices array is empty or invalid",
+				"INVALID_PRICES",
+			);
 		}
 
 		if (prices.length < period + 1) {
-			throw new CalculationError(`Not enough data points. Need ${period + 1}, got ${prices.length}`, "INSUFFICIENT_DATA");
+			throw new CalculationError(
+				`Not enough data points. Need ${period + 1}, got ${prices.length}`,
+				"INSUFFICIENT_DATA",
+			);
 		}
 
 		// 価格変動の計算
-		const priceChanges = this.calculatePriceChanges(prices);
-		
+		const priceChanges = RSICalculator.calculatePriceChanges(prices);
+
 		// 上昇・下落の分離
 		const gains: number[] = [];
 		const losses: number[] = [];
@@ -44,23 +50,26 @@ export class RSICalculator {
 		}
 
 		const rs = avgGain / avgLoss;
-		
+
 		// RSI = 100 - (100 / (1 + RS))
-		const rsi = 100 - (100 / (1 + rs));
+		const rsi = 100 - 100 / (1 + rs);
 
 		return Calculator.round(rsi, 2);
 	}
 
 	// 複数期間のRSIを一度に計算
-	public static calculateMultiplePeriods(prices: number[], periods: number[]): { [key: string]: number } {
+	public static calculateMultiplePeriods(
+		prices: number[],
+		periods: number[],
+	): { [key: string]: number } {
 		const result: { [key: string]: number } = {};
 
 		for (const period of periods) {
 			try {
-				result[`rsi${period}`] = this.calculate(prices, period);
+				result[`rsi${period}`] = RSICalculator.calculate(prices, period);
 			} catch (error) {
 				// エラーが発生した期間はNaNを設定
-				result[`rsi${period}`] = NaN;
+				result[`rsi${period}`] = Number.NaN;
 			}
 		}
 
@@ -70,7 +79,7 @@ export class RSICalculator {
 	// 価格変動（価格差）の配列を計算
 	private static calculatePriceChanges(prices: number[]): number[] {
 		const changes: number[] = [];
-		
+
 		for (let i = 1; i < prices.length; i++) {
 			changes.push(prices[i] - prices[i - 1]);
 		}
@@ -79,9 +88,12 @@ export class RSICalculator {
 	}
 
 	// RSI配列の計算（全期間）
-	public static calculateArray(prices: number[], period: number = 14): number[] {
+	public static calculateArray(prices: number[], period = 14): number[] {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
+			throw new CalculationError(
+				"Prices array is empty or invalid",
+				"INVALID_PRICES",
+			);
 		}
 
 		if (prices.length < period + 1) {
@@ -89,8 +101,8 @@ export class RSICalculator {
 		}
 
 		const rsiArray: number[] = [];
-		const priceChanges = this.calculatePriceChanges(prices);
-		
+		const priceChanges = RSICalculator.calculatePriceChanges(prices);
+
 		// 上昇・下落の分離
 		const gains: number[] = [];
 		const losses: number[] = [];
@@ -109,7 +121,7 @@ export class RSICalculator {
 			rsiArray.push(100);
 		} else {
 			const rs = avgGain / avgLoss;
-			const rsi = 100 - (100 / (1 + rs));
+			const rsi = 100 - 100 / (1 + rs);
 			rsiArray.push(Calculator.round(rsi, 2));
 		}
 
@@ -122,7 +134,7 @@ export class RSICalculator {
 				rsiArray.push(100);
 			} else {
 				const rs = avgGain / avgLoss;
-				const rsi = 100 - (100 / (1 + rs));
+				const rsi = 100 - 100 / (1 + rs);
 				rsiArray.push(Calculator.round(rsi, 2));
 			}
 		}
@@ -132,22 +144,25 @@ export class RSICalculator {
 
 	// RSIによるシグナル判定
 	public static getSignal(rsi: number): "overbought" | "oversold" | "neutral" {
-		if (rsi >= 70) return "overbought";  // 買われすぎ
-		if (rsi <= 30) return "oversold";    // 売られすぎ
+		if (rsi >= 70) return "overbought"; // 買われすぎ
+		if (rsi <= 30) return "oversold"; // 売られすぎ
 		return "neutral";
 	}
 
 	// モメンタム判定
-	public static getMomentum(prices: number[], period: number = 14): "positive" | "negative" | "neutral" {
+	public static getMomentum(
+		prices: number[],
+		period = 14,
+	): "positive" | "negative" | "neutral" {
 		try {
-			const rsiArray = this.calculateArray(prices, period);
+			const rsiArray = RSICalculator.calculateArray(prices, period);
 			if (rsiArray.length < 2) return "neutral";
 
 			const current = rsiArray[rsiArray.length - 1];
 			const previous = rsiArray[rsiArray.length - 2];
 
-			if (current > previous + 2) return "positive";  // 2ポイント以上上昇
-			if (current < previous - 2) return "negative";  // 2ポイント以上下落
+			if (current > previous + 2) return "positive"; // 2ポイント以上上昇
+			if (current < previous - 2) return "negative"; // 2ポイント以上下落
 			return "neutral";
 		} catch (error) {
 			return "neutral";
@@ -156,17 +171,21 @@ export class RSICalculator {
 
 	// RSIの強度判定
 	public static getStrength(rsi: number): "strong" | "moderate" | "weak" {
-		if (rsi >= 80 || rsi <= 20) return "strong";    // 極端な水準
-		if (rsi >= 65 || rsi <= 35) return "moderate";  // やや極端
-		return "weak";  // 中立圏
+		if (rsi >= 80 || rsi <= 20) return "strong"; // 極端な水準
+		if (rsi >= 65 || rsi <= 35) return "moderate"; // やや極端
+		return "weak"; // 中立圏
 	}
 
 	// ダイバージェンスの検出（簡易版）
-	public static detectDivergence(prices: number[], rsiPeriod: number = 14, lookback: number = 10): "bullish" | "bearish" | "none" {
+	public static detectDivergence(
+		prices: number[],
+		rsiPeriod = 14,
+		lookback = 10,
+	): "bullish" | "bearish" | "none" {
 		try {
 			if (prices.length < rsiPeriod + lookback) return "none";
 
-			const rsiArray = this.calculateArray(prices, rsiPeriod);
+			const rsiArray = RSICalculator.calculateArray(prices, rsiPeriod);
 			const recentPrices = prices.slice(-lookback);
 			const recentRsi = rsiArray.slice(-lookback);
 
