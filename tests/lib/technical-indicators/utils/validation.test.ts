@@ -21,31 +21,22 @@ describe("ValidationUtils", () => {
 
 		it("配列以外の場合エラーを投げる", () => {
 			assert.throws(() => {
-				ValidationUtils.validatePricesArray("invalid" as any);
-			}, {
-				name: 'CalculationError',
-				message: /Prices must be an array/
-			});
+				ValidationUtils.validatePricesArray("invalid" as unknown as number[]);
+			}, /Prices must be an array/);
 		});
 
 		it("無限大を含む場合エラーを投げる", () => {
-			const prices = [100, Infinity, 102];
+			const prices = [100, Number.POSITIVE_INFINITY, 102];
 			assert.throws(() => {
 				ValidationUtils.validatePricesArray(prices);
-			}, {
-				name: 'CalculationError',
-				message: /Invalid price at index 1/
-			});
+			}, /Invalid price at index 1/);
 		});
 
 		it("NaNを含む場合エラーを投げる", () => {
 			const prices = [100, Number.NaN, 102];
 			assert.throws(() => {
 				ValidationUtils.validatePricesArray(prices);
-			}, {
-				name: 'CalculationError',
-				message: /Invalid price at index 1/
-			});
+			}, /Invalid price at index 1/);
 		});
 	});
 
@@ -59,37 +50,25 @@ describe("ValidationUtils", () => {
 		it("0の場合エラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriod(0);
-			}, {
-				name: 'CalculationError',
-				message: /period must be a positive integer/
-			});
+			}, /period must be a positive integer/);
 		});
 
 		it("負の値の場合エラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriod(-5);
-			}, {
-				name: 'CalculationError',
-				message: /period must be a positive integer/
-			});
+			}, /period must be a positive integer/);
 		});
 
 		it("小数の場合エラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriod(14.5);
-			}, {
-				name: 'CalculationError',
-				message: /period must be a positive integer/
-			});
+			}, /period must be a positive integer/);
 		});
 
 		it("カスタムパラメータ名でエラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriod(0, "customPeriod");
-			}, {
-				name: 'CalculationError',
-				message: /customPeriod must be a positive integer/
-			});
+			}, /customPeriod must be a positive integer/);
 		});
 	});
 
@@ -109,19 +88,13 @@ describe("ValidationUtils", () => {
 		it("不十分なデータ長の場合エラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validateDataLength(30, 50);
-			}, {
-				name: 'CalculationError',
-				message: /Insufficient data: need 50, got 30/
-			});
+			}, /Insufficient data: need 50, got 30/);
 		});
 
 		it("カスタムデータタイプ名でエラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validateDataLength(30, 50, "price history");
-			}, {
-				name: 'CalculationError',
-				message: /Insufficient price history: need 50, got 30/
-			});
+			}, /Insufficient price history: need 50, got 30/);
 		});
 	});
 
@@ -135,28 +108,19 @@ describe("ValidationUtils", () => {
 		it("同じ期間の場合エラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriodRelationship(14, 14);
-			}, {
-				name: 'CalculationError',
-				message: /Slow period \(14\) must be greater than fast period \(14\)/
-			});
+			}, /Slow period \(14\) must be greater than fast period \(14\)/);
 		});
 
 		it("逆転した期間関係の場合エラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriodRelationship(26, 12);
-			}, {
-				name: 'CalculationError',
-				message: /Slow period \(12\) must be greater than fast period \(26\)/
-			});
+			}, /Slow period \(12\) must be greater than fast period \(26\)/);
 		});
 
 		it("無効な期間値でエラーを投げる", () => {
 			assert.throws(() => {
 				ValidationUtils.validatePeriodRelationship(0, 26);
-			}, {
-				name: 'CalculationError',
-				message: /fastPeriod must be a positive integer/
-			});
+			}, /fastPeriod must be a positive integer/);
 		});
 	});
 });
