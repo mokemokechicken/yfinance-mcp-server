@@ -1,0 +1,223 @@
+/**
+ * 財務指標分析クラス
+ * Yahoo Finance APIを使用して企業の財務指標を取得・計算
+ */
+
+import yahooFinance from "yahoo-finance2";
+import type {
+	FinancialMetricsResult,
+	QuoteSummaryResult,
+	FinancialDataError,
+	FINANCIAL_MODULES,
+} from "./types.js";
+
+export class FinancialAnalyzer {
+	/**
+	 * 財務指標を取得
+	 * @param symbol 銘柄コード
+	 * @returns 財務指標結果
+	 */
+	static async getFinancialMetrics(
+		symbol: string,
+	): Promise<FinancialMetricsResult> {
+		try {
+			// quoteSummary APIで必要なmodulesを一括取得
+			const modules = [
+				"price",
+				"summaryDetail",
+				"defaultKeyStatistics",
+				"financialData",
+				"balanceSheetHistory",
+			];
+
+			const quoteSummary = await yahooFinance.quoteSummary(symbol, {
+				modules: modules as any,
+			});
+
+			// 基本情報の取得
+			const result: FinancialMetricsResult = {
+				symbol,
+				companyName: quoteSummary.price?.shortName || undefined,
+				lastUpdated: new Date().toISOString(),
+				dataSource: "yahoo-finance",
+			};
+
+			// 時価総額
+			if (quoteSummary.price?.marketCap) {
+				result.marketCap = quoteSummary.price.marketCap;
+			}
+
+			// PER（実績）
+			if (quoteSummary.summaryDetail?.trailingPE) {
+				result.trailingPE = quoteSummary.summaryDetail.trailingPE;
+			}
+
+			// PER（予想）
+			if (quoteSummary.defaultKeyStatistics?.forwardPE) {
+				result.forwardPE = quoteSummary.defaultKeyStatistics.forwardPE;
+			}
+
+			// PBR
+			if (quoteSummary.defaultKeyStatistics?.priceToBook) {
+				result.priceToBook = quoteSummary.defaultKeyStatistics.priceToBook;
+			}
+
+			// ROE
+			if (quoteSummary.financialData?.returnOnEquity) {
+				result.returnOnEquity = quoteSummary.financialData.returnOnEquity;
+			}
+
+			// EPS成長率
+			if (quoteSummary.financialData?.earningsGrowth) {
+				result.earningsGrowth = quoteSummary.financialData.earningsGrowth;
+			}
+
+			// 配当利回り（%変換）
+			if (quoteSummary.summaryDetail?.dividendYield) {
+				result.dividendYield = quoteSummary.summaryDetail.dividendYield * 100;
+			}
+
+			// 自己資本比率（計算）
+			result.equityRatio = FinancialAnalyzer.calculateEquityRatio(
+				quoteSummary as any,
+			);
+
+			return result;
+		} catch (error: unknown) {
+			FinancialAnalyzer.handleQuoteSummaryError(error, symbol);
+			throw error; // TypeScriptのflow analysisのため
+		}
+	}
+
+	/**
+	 * 自己資本比率を計算
+	 * 計算式: 総株主資本 / 総資産 × 100
+	 */
+	private static calculateEquityRatio(
+		quoteSummary: QuoteSummaryResult,
+	): number | undefined {
+		try {
+			const balanceSheet =
+				quoteSummary.balanceSheetHistory?.balanceSheetStatements?.[0];
+
+			if (!balanceSheet?.totalStockholderEquity || !balanceSheet?.totalAssets) {
+				return undefined;
+			}
+
+			const equity = balanceSheet.totalStockholderEquity;
+			const totalAssets = balanceSheet.totalAssets;
+
+			// 有効な数値かチェック
+			if (equity <= 0 || totalAssets <= 0) {
+				return undefined;
+			}
+
+			// 自己資本比率を%で計算
+			return (equity / totalAssets) * 100;
+		} catch (error) {
+			// 計算エラーの場合はundefinedを返す
+			return undefined;
+		}
+	}
+
+	/**
+	 * quoteSummary APIエラーのハンドリング
+	 */
+	private static handleQuoteSummaryError(
+		error: unknown,
+		symbol: string,
+	): never {
+		let errorType: "api_error" | "data_missing" | "calculation_error" =
+			"api_error";
+		let message = `財務指標の取得に失敗しました: ${symbol}`;
+
+		// エラーの種類を判定
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		if (errorMessage.includes("404") || errorMessage.includes("Not Found")) {
+			errorType = "data_missing";
+			message = `銘柄が見つかりません: ${symbol}`;
+		} else if (
+			errorMessage.includes("Unauthorized") ||
+			errorMessage.includes("403")
+		) {
+			errorType = "api_error";
+			message = `API認証エラー: ${symbol}`;
+		} else if (
+			errorMessage.includes("timeout") ||
+			errorMessage.includes("TIMEOUT")
+		) {
+			errorType = "api_error";
+			message = `APIタイムアウト: ${symbol}`;
+		} else if (errorMessage.includes("Rate limit")) {
+			errorType = "api_error";
+			message = `APIレート制限: ${symbol}`;
+		}
+
+		// カスタムエラーとして再throw
+		const financialError = new Error(message) as FinancialDataError;
+		financialError.name = "FinancialDataError";
+		financialError.symbol = symbol;
+		financialError.errorType = errorType;
+
+		throw financialError;
+	}
+
+	/**
+	 * 複数銘柄の財務指標を並行取得
+	 * @param symbols 銘柄コード配列
+	 * @returns 財務指標結果配列
+	 */
+	static async getMultipleFinancialMetrics(
+		symbols: string[],
+	): Promise<Array<FinancialMetricsResult | null>> {
+		const promises = symbols.map(async (symbol) => {
+			try {
+				return await FinancialAnalyzer.getFinancialMetrics(symbol);
+			} catch (error) {
+				console.warn(`財務指標取得エラー [${symbol}]:`, error);
+				return null;
+			}
+		});
+
+		return await Promise.all(promises);
+	}
+
+	/**
+	 * 財務指標の健全性をチェック
+	 * @param metrics 財務指標結果
+	 * @returns 有効な指標の数
+	 */
+	static validateMetrics(metrics: FinancialMetricsResult): {
+		validCount: number;
+		totalCount: number;
+		missingFields: string[];
+	} {
+		const fields = [
+			"marketCap",
+			"trailingPE",
+			"forwardPE",
+			"priceToBook",
+			"returnOnEquity",
+			"earningsGrowth",
+			"dividendYield",
+			"equityRatio",
+		] as const;
+
+		let validCount = 0;
+		const missingFields: string[] = [];
+
+		for (const field of fields) {
+			if (metrics[field] !== undefined && metrics[field] !== null) {
+				validCount++;
+			} else {
+				missingFields.push(field);
+			}
+		}
+
+		return {
+			validCount,
+			totalCount: fields.length,
+			missingFields,
+		};
+	}
+}

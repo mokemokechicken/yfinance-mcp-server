@@ -14,6 +14,10 @@ import {
 	VolumeAnalysisCalculator,
 	VWAPCalculator,
 	
+	// Phase3 財務指標
+	FinancialAnalyzer,
+	MovingAverageDeviationCalculator,
+	
 	// 型定義
 	type StockAnalysisResult,
 	type BollingerBandsResult,
@@ -22,6 +26,9 @@ import {
 	type VolumeAnalysisResult,
 	type VWAPResult,
 	type PriceData,
+	type FinancialMetricsResult,
+	type MovingAverageDeviationResult,
+	type RSIExtendedResult,
 } from "../src/lib/technical-indicators";
 
 // 統合テクニカル指標テスト
@@ -55,6 +62,9 @@ async function testAllTechnicalIndicators(symbol?: string) {
 
 		// === Phase2: 拡張テクニカル指標 ===
 		await testAdvancedIndicators(priceData, closePrices);
+
+		// === Phase3: 財務指標 ===
+		await testFinancialMetrics(stockSymbol, closePrices);
 
 		// === 統合分析結果 ===
 		await testIntegratedAnalysis(stockSymbol);
@@ -90,21 +100,47 @@ async function testBasicIndicators(priceData: PriceData[], closePrices: number[]
 		console.log(`  ❌ 移動平均線エラー: ${error.message}`);
 	}
 
-	// RSI
-	console.log("\n🔹 RSI (相対力指数):");
+	// RSI (拡張機能含む)
+	console.log("\n🔹 RSI (相対力指数) - 拡張版:");
 	try {
-		const rsi14 = RSICalculator.calculate(closePrices, 14);
-		const rsi21 = RSICalculator.calculate(closePrices, 21);
+		const rsiExtended: RSIExtendedResult = RSICalculator.calculateExtended(closePrices);
 		
-		console.log(`  14日RSI: ${rsi14.toFixed(2)}`);
-		console.log(`  21日RSI: ${rsi21.toFixed(2)}`);
+		console.log(`  14日RSI: ${rsiExtended.rsi14.toFixed(2)}`);
+		console.log(`  21日RSI: ${rsiExtended.rsi21.toFixed(2)}`);
+		console.log(`  14日シグナル: ${getJapaneseSignal("rsi_signal", rsiExtended.signal14)}`);
+		console.log(`  21日シグナル: ${getJapaneseSignal("rsi_signal", rsiExtended.signal21)}`);
 
-		const rsiSignal = RSICalculator.getSignal(rsi14);
-		const rsiMomentum = RSICalculator.getMomentum(closePrices, 14);
-		console.log(`  シグナル: ${getJapaneseSignal("rsi_signal", rsiSignal)}`);
-		console.log(`  モメンタム: ${getJapaneseSignal("momentum", rsiMomentum)}`);
+		const rsiComparison = RSICalculator.compareMultipleRSI(closePrices, [14, 21]);
+		console.log(`  RSI収束/発散: ${getJapaneseSignal("rsi_trend", rsiComparison.trend)}`);
+		console.log(`  総合推奨: ${getJapaneseSignal("recommendation", rsiComparison.recommendation)}`);
 	} catch (error: any) {
 		console.log(`  ❌ RSIエラー: ${error.message}`);
+	}
+
+	// 移動平均乖離率
+	console.log("\n🔹 移動平均乖離率:");
+	try {
+		const deviationPeriods = [25, 50, 200];
+		const deviationResults: MovingAverageDeviationResult[] = [];
+		
+		for (const period of deviationPeriods) {
+			try {
+				const deviation = MovingAverageDeviationCalculator.calculate(closePrices, period);
+				deviationResults.push(deviation);
+				const sign = deviation.deviation >= 0 ? "+" : "";
+				console.log(`  ${period}日MA乖離: ${sign}${deviation.deviation.toFixed(2)}% (MA: ¥${deviation.movingAverage.toLocaleString()})`);
+			} catch (error: any) {
+				console.log(`  ${period}日MA乖離: データ不足`);
+			}
+		}
+
+		if (deviationResults.length >= 2) {
+			const overallSignal = MovingAverageDeviationCalculator.getOverallSignal(deviationResults);
+			console.log(`  総合シグナル: ${getJapaneseSignal("deviation_signal", overallSignal.signal)}`);
+			console.log(`  信頼度: ${getJapaneseSignal("confidence", overallSignal.confidence)}`);
+		}
+	} catch (error: any) {
+		console.log(`  ❌ 移動平均乖離率エラー: ${error.message}`);
 	}
 
 	// MACD
@@ -214,6 +250,41 @@ async function testAdvancedIndicators(priceData: PriceData[], closePrices: numbe
 		console.log(`  ブレイクアウト: ${getJapaneseSignal("breakout", breakout)}`);
 	} catch (error: any) {
 		console.log(`  ❌ VWAPエラー: ${error.message}`);
+	}
+
+	console.log();
+}
+
+// Phase3: 財務指標のテスト
+async function testFinancialMetrics(symbol: string, closePrices: number[]) {
+	console.log("💰 **Phase3: 財務指標**");
+	console.log("-".repeat(50));
+
+	// 財務指標取得
+	console.log("🔹 企業財務指標:");
+	try {
+		const financialMetrics: FinancialMetricsResult = await FinancialAnalyzer.getFinancialMetrics(symbol);
+		
+		console.log(`  銘柄: ${financialMetrics.symbol}${financialMetrics.companyName ? ` (${financialMetrics.companyName})` : ""}`);
+		console.log(`  時価総額: ${financialMetrics.marketCap ? `¥${financialMetrics.marketCap.toLocaleString()}` : "N/A"}`);
+		console.log(`  PER（実績）: ${financialMetrics.trailingPE?.toFixed(2) || "N/A"}`);
+		console.log(`  PER（予想）: ${financialMetrics.forwardPE?.toFixed(2) || "N/A"}`);
+		console.log(`  PBR: ${financialMetrics.priceToBook?.toFixed(2) || "N/A"}`);
+		console.log(`  ROE: ${financialMetrics.returnOnEquity ? (financialMetrics.returnOnEquity * 100).toFixed(2) + "%" : "N/A"}`);
+		console.log(`  EPS成長率: ${financialMetrics.earningsGrowth ? (financialMetrics.earningsGrowth * 100).toFixed(2) + "%" : "N/A"}`);
+		console.log(`  配当利回り: ${financialMetrics.dividendYield?.toFixed(2)}%` || "N/A");
+		console.log(`  自己資本比率: ${financialMetrics.equityRatio?.toFixed(1)}%` || "N/A");
+
+		// 財務指標の健全性チェック
+		const validation = FinancialAnalyzer.validateMetrics(financialMetrics);
+		console.log(`  データ充足率: ${validation.validCount}/${validation.totalCount} (${((validation.validCount / validation.totalCount) * 100).toFixed(1)}%)`);
+		
+		if (validation.missingFields.length > 0) {
+			console.log(`  欠損項目: ${validation.missingFields.join(", ")}`);
+		}
+
+	} catch (error: any) {
+		console.log(`  ❌ 財務指標取得エラー: ${error.message}`);
 	}
 
 	console.log();
@@ -412,6 +483,31 @@ function getJapaneseSignal(type: string, signal: string): string {
 			bearish_breakout: "💥 下落ブレイク",
 			none: "⚪ ブレイクなし",
 		},
+		// Phase3追加
+		deviation_signal: {
+			strong_above: "🔴 大幅上振れ",
+			above: "🟠 上振れ",
+			neutral: "🟢 正常範囲",
+			below: "🟡 下振れ",
+			strong_below: "🔵 大幅下振れ",
+		},
+		confidence: {
+			high: "🔴 高",
+			medium: "🟡 中",
+			low: "🔵 低",
+		},
+		rsi_trend: {
+			converging: "🔄 収束",
+			diverging: "↗️ 発散",
+			stable: "➡️ 安定",
+		},
+		recommendation: {
+			strong_buy: "🟢 強い買い",
+			buy: "💚 買い",
+			hold: "🟡 保持",
+			sell: "🔴 売り",
+			strong_sell: "💀 強い売り",
+		},
 	};
 
 	return translations[type]?.[signal] || signal;
@@ -434,10 +530,17 @@ function displayFeatureSummary() {
 	console.log("  📊 出来高分析 (相対出来高・蓄積判定)");
 	console.log("  💰 VWAP (出来高加重平均価格)");
 	
+	console.log("\n**Phase3 財務指標:**");
+	console.log("  💰 企業財務指標 (時価総額・PER・PBR・ROE等)");
+	console.log("  📊 移動平均乖離率 (25日・50日・200日)");
+	console.log("  📈 RSI拡張 (14日・21日比較分析)");
+	console.log("  🔍 Yahoo Finance API統合");
+	
 	console.log("\n**統合機能:**");
 	console.log("  🎯 総合的な売買シグナル判定");
 	console.log("  📊 トレンド・モメンタム・強度分析");
 	console.log("  📋 包括的なテクニカル分析レポート");
+	console.log("  💼 企業の財務健全性分析");
 	
 	console.log("\n**技術仕様:**");
 	console.log("  🛠️ TypeScript + Yahoo Finance API");

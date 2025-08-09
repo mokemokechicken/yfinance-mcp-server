@@ -1,6 +1,10 @@
 import { CalculationError } from "../types";
 import { Calculator } from "../utils/calculator";
 import { ValidationUtils } from "../utils/validation";
+import type {
+	RSIExtendedResult,
+	RSILevels,
+} from "../financial-indicators/types.js";
 
 export class RSICalculator {
 	// RSI計算のメインメソッド（ウォームアップ期間を考慮、強化版）
@@ -238,5 +242,83 @@ export class RSICalculator {
 		} catch (error) {
 			return "none";
 		}
+	}
+
+	// RSI拡張結果（14日・21日）を取得
+	public static calculateExtended(
+		prices: number[],
+		levels: RSILevels = { overbought: 70, oversold: 30 },
+	): RSIExtendedResult {
+		const rsi14 = RSICalculator.calculate(prices, 14);
+		const rsi21 = RSICalculator.calculate(prices, 21);
+
+		return {
+			rsi14,
+			rsi21,
+			signal14: RSICalculator.getSignalWithLevels(rsi14, levels),
+			signal21: RSICalculator.getSignalWithLevels(rsi21, levels),
+		};
+	}
+
+	// カスタムレベルでのシグナル判定
+	public static getSignalWithLevels(
+		rsi: number,
+		levels: RSILevels,
+	): "overbought" | "oversold" | "neutral" {
+		if (rsi >= levels.overbought) return "overbought";
+		if (rsi <= levels.oversold) return "oversold";
+		return "neutral";
+	}
+
+	// 複数期間RSIの比較分析
+	public static compareMultipleRSI(
+		prices: number[],
+		periods: number[] = [14, 21],
+	): {
+		periods: number[];
+		values: number[];
+		signals: ("overbought" | "oversold" | "neutral")[];
+		trend: "converging" | "diverging" | "stable";
+		recommendation: "strong_buy" | "buy" | "hold" | "sell" | "strong_sell";
+	} {
+		const results = RSICalculator.calculateMultiplePeriods(prices, periods);
+
+		const values = periods.map((period) => results[`rsi${period}`]);
+		const signals = values.map((rsi) => RSICalculator.getSignal(rsi));
+
+		// トレンド判定（期間間の差異）
+		let trend: "converging" | "diverging" | "stable" = "stable";
+		if (values.length >= 2) {
+			const maxDiff = Math.max(...values) - Math.min(...values);
+			if (maxDiff > 15) {
+				trend = "diverging"; // 期間間で大きな差異
+			} else if (maxDiff < 5) {
+				trend = "converging"; // 期間間で収束
+			}
+		}
+
+		// 総合推奨判定
+		const avgRSI = values.reduce((sum, val) => sum + val, 0) / values.length;
+		let recommendation: "strong_buy" | "buy" | "hold" | "sell" | "strong_sell";
+
+		if (avgRSI <= 20) {
+			recommendation = "strong_buy";
+		} else if (avgRSI <= 30) {
+			recommendation = "buy";
+		} else if (avgRSI >= 80) {
+			recommendation = "strong_sell";
+		} else if (avgRSI >= 70) {
+			recommendation = "sell";
+		} else {
+			recommendation = "hold";
+		}
+
+		return {
+			periods,
+			values,
+			signals,
+			trend,
+			recommendation,
+		};
 	}
 }

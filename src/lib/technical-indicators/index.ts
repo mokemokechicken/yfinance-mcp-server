@@ -27,6 +27,19 @@ export type { VolumeAnalysisResult } from "./indicators/volumeAnalysis";
 export { VWAPCalculator } from "./indicators/vwap";
 export type { VWAPResult } from "./indicators/vwap";
 
+// 財務指標ライブラリエクスポート（Phase3）
+export { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
+export { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
+export type {
+	FinancialMetricsResult,
+	MovingAverageDeviationResult,
+	RSIExtendedResult,
+	DeviationSignal,
+	RSILevels,
+	FinancialCalculationOptions,
+} from "./financial-indicators/types";
+export { FinancialDataError } from "./financial-indicators/types";
+
 // ユーティリティエクスポート
 export { Calculator } from "./utils/calculator";
 export { DataProcessor } from "./utils/dataProcessor";
