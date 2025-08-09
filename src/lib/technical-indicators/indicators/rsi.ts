@@ -1,18 +1,11 @@
-import type {
-	RSIExtendedResult,
-	RSILevels,
-} from "../financial-indicators/types.js";
+import type { RSIExtendedResult, RSILevels } from "../financial-indicators/types.js";
 import { CalculationError } from "../types";
 import { Calculator } from "../utils/calculator";
 import { ValidationUtils } from "../utils/validation";
 
 export class RSICalculator {
 	// RSI計算のメインメソッド（ウォームアップ期間を考慮、強化版）
-	public static calculate(
-		prices: number[],
-		period = 14,
-		warmupPeriod = 250,
-	): number {
+	public static calculate(prices: number[], period = 14, warmupPeriod = 250): number {
 		// 入力検証（強化版）
 		ValidationUtils.validatePricesArray(prices);
 		ValidationUtils.validatePeriod(period, "period");
@@ -23,10 +16,7 @@ export class RSICalculator {
 
 		// ウォームアップ期間を考慮（実用的な範囲で）
 		const effectiveWarmup = Math.min(warmupPeriod, prices.length - period - 1);
-		const warmupStartIndex = Math.max(
-			0,
-			prices.length - period - effectiveWarmup - 1,
-		);
+		const warmupStartIndex = Math.max(0, prices.length - period - effectiveWarmup - 1);
 		const effectivePrices = prices.slice(warmupStartIndex);
 
 		// 価格変動の計算
@@ -77,10 +67,7 @@ export class RSICalculator {
 	}
 
 	// 複数期間のRSIを一度に計算
-	public static calculateMultiplePeriods(
-		prices: number[],
-		periods: number[],
-	): { [key: string]: number } {
+	public static calculateMultiplePeriods(prices: number[], periods: number[]): { [key: string]: number } {
 		const result: { [key: string]: number } = {};
 
 		for (const period of periods) {
@@ -109,10 +96,7 @@ export class RSICalculator {
 	// RSI配列の計算（全期間）
 	public static calculateArray(prices: number[], period = 14): number[] {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
 		}
 
 		if (prices.length < period + 1) {
@@ -177,10 +161,7 @@ export class RSICalculator {
 	}
 
 	// モメンタム判定
-	public static getMomentum(
-		prices: number[],
-		period = 14,
-	): "positive" | "negative" | "neutral" {
+	public static getMomentum(prices: number[], period = 14): "positive" | "negative" | "neutral" {
 		try {
 			const rsiArray = RSICalculator.calculateArray(prices, period);
 			if (rsiArray.length < 2) return "neutral";
@@ -204,11 +185,7 @@ export class RSICalculator {
 	}
 
 	// ダイバージェンスの検出（簡易版）
-	public static detectDivergence(
-		prices: number[],
-		rsiPeriod = 14,
-		lookback = 10,
-	): "bullish" | "bearish" | "none" {
+	public static detectDivergence(prices: number[], rsiPeriod = 14, lookback = 10): "bullish" | "bearish" | "none" {
 		try {
 			if (prices.length < rsiPeriod + lookback) return "none";
 
@@ -262,10 +239,7 @@ export class RSICalculator {
 	}
 
 	// カスタムレベルでのシグナル判定
-	public static getSignalWithLevels(
-		rsi: number,
-		levels: RSILevels,
-	): "overbought" | "oversold" | "neutral" {
+	public static getSignalWithLevels(rsi: number, levels: RSILevels): "overbought" | "oversold" | "neutral" {
 		if (rsi >= levels.overbought) return "overbought";
 		if (rsi <= levels.oversold) return "oversold";
 		return "neutral";

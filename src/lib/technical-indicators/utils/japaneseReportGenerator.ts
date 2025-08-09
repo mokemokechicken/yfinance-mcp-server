@@ -125,10 +125,7 @@ function formatPercentage(value: number): string {
 }
 
 // 日本語レポート生成
-export function generateJapaneseReport(
-	analysis: ComprehensiveStockAnalysisResult,
-	days: number,
-): string {
+export function generateJapaneseReport(analysis: ComprehensiveStockAnalysisResult, days: number): string {
 	const sections: string[] = [];
 
 	// 基本情報
@@ -137,9 +134,7 @@ export function generateJapaneseReport(
 	sections.push("### 基本情報");
 	sections.push(`- 銘柄: ${analysis.symbol} (${analysis.companyName})`);
 	sections.push(`- 分析期間: 直近${days}日間（内部計算用: 1年分データ使用）`);
-	sections.push(
-		`- 分析日時: ${new Date(analysis.lastUpdated).toLocaleString("ja-JP")}`,
-	);
+	sections.push(`- 分析日時: ${new Date(analysis.lastUpdated).toLocaleString("ja-JP")}`);
 
 	// 価格情報
 	sections.push("");
@@ -154,24 +149,14 @@ export function generateJapaneseReport(
 		sections.push("");
 		sections.push("### 財務指標");
 		const fm = analysis.financialMetrics;
-		sections.push(
-			`- 時価総額: ${fm.marketCap ? formatCurrency(fm.marketCap) : "N/A"}`,
-		);
+		sections.push(`- 時価総額: ${fm.marketCap ? formatCurrency(fm.marketCap) : "N/A"}`);
 		sections.push(`- PER（実績）: ${fm.trailingPE?.toFixed(2) || "N/A"}`);
 		sections.push(`- PER（予想）: ${fm.forwardPE?.toFixed(2) || "N/A"}`);
 		sections.push(`- PBR: ${fm.priceToBook?.toFixed(2) || "N/A"}`);
-		sections.push(
-			`- ROE: ${fm.returnOnEquity ? `${fm.returnOnEquity.toFixed(2)}%` : "N/A"}`,
-		);
-		sections.push(
-			`- EPS成長率: ${fm.earningsGrowth ? `${(fm.earningsGrowth * 100).toFixed(2)}%` : "N/A"}`,
-		);
-		sections.push(
-			`- 配当利回り: ${fm.dividendYield ? `${fm.dividendYield.toFixed(2)}%` : "N/A"}`,
-		);
-		sections.push(
-			`- 自己資本比率: ${fm.equityRatio ? `${fm.equityRatio.toFixed(1)}%` : "N/A"}`,
-		);
+		sections.push(`- ROE: ${fm.returnOnEquity ? `${fm.returnOnEquity.toFixed(2)}%` : "N/A"}`);
+		sections.push(`- EPS成長率: ${fm.earningsGrowth ? `${(fm.earningsGrowth * 100).toFixed(2)}%` : "N/A"}`);
+		sections.push(`- 配当利回り: ${fm.dividendYield ? `${fm.dividendYield.toFixed(2)}%` : "N/A"}`);
+		sections.push(`- 自己資本比率: ${fm.equityRatio ? `${fm.equityRatio.toFixed(1)}%` : "N/A"}`);
 	}
 
 	// テクニカル指標
@@ -193,20 +178,14 @@ export function generateJapaneseReport(
 	sections.push(
 		`- 200日線: ${ma.ma200 ? formatCurrency(ma.ma200) : "N/A"} (現在価格との関係: ${ma.ma200 && currentPrice > ma.ma200 ? "上位" : "下位"})`,
 	);
-	sections.push(
-		`- トレンド判定: ${getJapaneseSignal("trend", analysis.signals.trend)}`,
-	);
+	sections.push(`- トレンド判定: ${getJapaneseSignal("trend", analysis.signals.trend)}`);
 
 	// RSI拡張版
 	sections.push("");
 	sections.push("**RSI (相対力指数):**");
 	const rsiExt = analysis.extendedIndicators.rsiExtended;
-	sections.push(
-		`- 14日RSI: ${rsiExt.rsi14.toFixed(2)} (${getJapaneseSignal("rsi_signal", rsiExt.signal14)})`,
-	);
-	sections.push(
-		`- 21日RSI: ${rsiExt.rsi21.toFixed(2)} (${getJapaneseSignal("rsi_signal", rsiExt.signal21)})`,
-	);
+	sections.push(`- 14日RSI: ${rsiExt.rsi14.toFixed(2)} (${getJapaneseSignal("rsi_signal", rsiExt.signal14)})`);
+	sections.push(`- 21日RSI: ${rsiExt.rsi21.toFixed(2)} (${getJapaneseSignal("rsi_signal", rsiExt.signal21)})`);
 
 	// 移動平均乖離率
 	sections.push("");
@@ -251,9 +230,7 @@ export function generateJapaneseReport(
 	sections.push("");
 	sections.push("**ゴールデンクロス・デッドクロス検出:**");
 	const cross = analysis.extendedIndicators.crossDetection;
-	sections.push(
-		`- クロスタイプ: ${getJapaneseSignal("cross_type", cross.type)}`,
-	);
+	sections.push(`- クロスタイプ: ${getJapaneseSignal("cross_type", cross.type)}`);
 	sections.push(`- 短期MA(25日): ${formatCurrency(cross.shortMA)}`);
 	sections.push(`- 長期MA(50日): ${formatCurrency(cross.longMA)}`);
 	sections.push(`- 強度: ${getJapaneseSignal("strength", cross.strength)}`);
@@ -265,16 +242,10 @@ export function generateJapaneseReport(
 	const vol = analysis.extendedIndicators.volumeAnalysis;
 	sections.push(`- 平均出来高: ${vol.averageVolume.toLocaleString()}`);
 	sections.push(`- 相対出来高: ${vol.relativeVolume.toFixed(2)}倍`);
-	sections.push(
-		`- トレンド: ${getJapaneseSignal("volume_trend", vol.volumeTrend)}`,
-	);
+	sections.push(`- トレンド: ${getJapaneseSignal("volume_trend", vol.volumeTrend)}`);
 	sections.push(`- 急増検出: ${vol.volumeSpike ? "🔴 あり" : "⚪ なし"}`);
-	sections.push(
-		`- 価格相関: ${getJapaneseSignal("strength", vol.priceVolumeStrength)}`,
-	);
-	sections.push(
-		`- 蓄積判定: ${getJapaneseSignal("accumulation", vol.accumulation)}`,
-	);
+	sections.push(`- 価格相関: ${getJapaneseSignal("strength", vol.priceVolumeStrength)}`);
+	sections.push(`- 蓄積判定: ${getJapaneseSignal("accumulation", vol.accumulation)}`);
 
 	// VWAP
 	sections.push("");
@@ -284,23 +255,15 @@ export function generateJapaneseReport(
 	sections.push(`- 上部バンド: ${formatCurrency(vwap.upperBand)}`);
 	sections.push(`- 下部バンド: ${formatCurrency(vwap.lowerBand)}`);
 	sections.push(`- 価格位置: ${getJapaneseSignal("position", vwap.position)}`);
-	sections.push(
-		`- シグナル強度: ${getJapaneseSignal("strength", vwap.strength)}`,
-	);
+	sections.push(`- シグナル強度: ${getJapaneseSignal("strength", vwap.strength)}`);
 	sections.push(`- トレンド: ${getJapaneseSignal("trend", vwap.trend)}`);
 
 	// 統合シグナル分析
 	sections.push("");
 	sections.push("### 統合シグナル分析");
-	sections.push(
-		`- **トレンド:** ${getJapaneseSignal("trend", analysis.signals.trend)}`,
-	);
-	sections.push(
-		`- **モメンタム:** ${getJapaneseSignal("momentum", analysis.signals.momentum)}`,
-	);
-	sections.push(
-		`- **強度:** ${getJapaneseSignal("strength", analysis.signals.strength)}`,
-	);
+	sections.push(`- **トレンド:** ${getJapaneseSignal("trend", analysis.signals.trend)}`);
+	sections.push(`- **モメンタム:** ${getJapaneseSignal("momentum", analysis.signals.momentum)}`);
+	sections.push(`- **強度:** ${getJapaneseSignal("strength", analysis.signals.strength)}`);
 
 	return sections.join("\n");
 }

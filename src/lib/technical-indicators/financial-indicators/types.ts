@@ -111,13 +111,12 @@ export interface FinancialCalculationOptions {
 }
 
 // デフォルト設定
-export const DEFAULT_FINANCIAL_OPTIONS: Required<FinancialCalculationOptions> =
-	{
-		deviationPeriods: [25, 50, 200],
-		rsiPeriods: [14, 21],
-		rsiLevels: {
-			overbought: 70,
-			oversold: 30,
-		},
-		apiTimeout: 5000,
-	};
+export const DEFAULT_FINANCIAL_OPTIONS: Required<FinancialCalculationOptions> = {
+	deviationPeriods: [25, 50, 200],
+	rsiPeriods: [14, 21],
+	rsiLevels: {
+		overbought: 70,
+		oversold: 30,
+	},
+	apiTimeout: 5000,
+};

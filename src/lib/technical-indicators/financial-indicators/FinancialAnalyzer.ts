@@ -4,12 +4,7 @@
  */
 
 import yahooFinance from "yahoo-finance2";
-import type {
-	FINANCIAL_MODULES,
-	FinancialDataError,
-	FinancialMetricsResult,
-	QuoteSummaryResult,
-} from "./types.js";
+import type { FINANCIAL_MODULES, FinancialDataError, FinancialMetricsResult, QuoteSummaryResult } from "./types.js";
 
 export class FinancialAnalyzer {
 	/**
@@ -17,18 +12,10 @@ export class FinancialAnalyzer {
 	 * @param symbol 銘柄コード
 	 * @returns 財務指標結果
 	 */
-	static async getFinancialMetrics(
-		symbol: string,
-	): Promise<FinancialMetricsResult> {
+	static async getFinancialMetrics(symbol: string): Promise<FinancialMetricsResult> {
 		try {
 			// quoteSummary APIで必要なmodulesを一括取得
-			const modules = [
-				"price",
-				"summaryDetail",
-				"defaultKeyStatistics",
-				"financialData",
-				"balanceSheetHistory",
-			];
+			const modules = ["price", "summaryDetail", "defaultKeyStatistics", "financialData", "balanceSheetHistory"];
 
 			const quoteSummary = await yahooFinance.quoteSummary(symbol, {
 				modules: modules as (
@@ -59,9 +46,7 @@ export class FinancialAnalyzer {
 			}
 
 			// PER（予想）- フェールバック実装
-			result.forwardPE =
-				quoteSummary.defaultKeyStatistics?.forwardPE ??
-				quoteSummary.summaryDetail?.forwardPE;
+			result.forwardPE = quoteSummary.defaultKeyStatistics?.forwardPE ?? quoteSummary.summaryDetail?.forwardPE;
 
 			// PBR
 			if (quoteSummary.defaultKeyStatistics?.priceToBook) {
@@ -80,8 +65,7 @@ export class FinancialAnalyzer {
 
 			// 配当利回り（%変換）- フェールバック実装
 			const dividendYield =
-				quoteSummary.summaryDetail?.dividendYield ??
-				quoteSummary.summaryDetail?.trailingAnnualDividendYield;
+				quoteSummary.summaryDetail?.dividendYield ?? quoteSummary.summaryDetail?.trailingAnnualDividendYield;
 			if (dividendYield != null) {
 				result.dividendYield = dividendYield * 100;
 			}
@@ -100,9 +84,7 @@ export class FinancialAnalyzer {
 	 * 自己資本比率を計算
 	 * 計算式: 総株主資本 / 総資産 × 100
 	 */
-	private static calculateEquityRatio(
-		quoteSummary: unknown,
-	): number | undefined {
+	private static calculateEquityRatio(quoteSummary: unknown): number | undefined {
 		try {
 			// Type guard for the quoteSummary object
 			if (!quoteSummary || typeof quoteSummary !== "object") {
@@ -150,12 +132,8 @@ export class FinancialAnalyzer {
 	/**
 	 * quoteSummary APIエラーのハンドリング
 	 */
-	private static handleQuoteSummaryError(
-		error: unknown,
-		symbol: string,
-	): never {
-		let errorType: "api_error" | "data_missing" | "calculation_error" =
-			"api_error";
+	private static handleQuoteSummaryError(error: unknown, symbol: string): never {
+		let errorType: "api_error" | "data_missing" | "calculation_error" = "api_error";
 		let message = `財務指標の取得に失敗しました: ${symbol}`;
 
 		// エラーの種類を判定
@@ -163,16 +141,10 @@ export class FinancialAnalyzer {
 		if (errorMessage.includes("404") || errorMessage.includes("Not Found")) {
 			errorType = "data_missing";
 			message = `銘柄が見つかりません: ${symbol}`;
-		} else if (
-			errorMessage.includes("Unauthorized") ||
-			errorMessage.includes("403")
-		) {
+		} else if (errorMessage.includes("Unauthorized") || errorMessage.includes("403")) {
 			errorType = "api_error";
 			message = `API認証エラー: ${symbol}`;
-		} else if (
-			errorMessage.includes("timeout") ||
-			errorMessage.includes("TIMEOUT")
-		) {
+		} else if (errorMessage.includes("timeout") || errorMessage.includes("TIMEOUT")) {
 			errorType = "api_error";
 			message = `APIタイムアウト: ${symbol}`;
 		} else if (errorMessage.includes("Rate limit")) {
@@ -194,9 +166,7 @@ export class FinancialAnalyzer {
 	 * @param symbols 銘柄コード配列
 	 * @returns 財務指標結果配列
 	 */
-	static async getMultipleFinancialMetrics(
-		symbols: string[],
-	): Promise<Array<FinancialMetricsResult | null>> {
+	static async getMultipleFinancialMetrics(symbols: string[]): Promise<Array<FinancialMetricsResult | null>> {
 		const promises = symbols.map(async (symbol) => {
 			try {
 				return await FinancialAnalyzer.getFinancialMetrics(symbol);

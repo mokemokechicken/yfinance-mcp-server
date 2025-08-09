@@ -46,10 +46,7 @@ export class TechnicalAnalyzer {
 	private priceData: PriceData[];
 	private config: IndicatorConfig;
 
-	constructor(
-		priceData: PriceData[],
-		config: IndicatorConfig = DEFAULT_CONFIG,
-	) {
+	constructor(priceData: PriceData[], config: IndicatorConfig = DEFAULT_CONFIG) {
 		this.priceData = DataProcessor.cleanData(priceData);
 		this.config = config;
 	}
@@ -57,10 +54,7 @@ export class TechnicalAnalyzer {
 	// メインの分析実行メソッド
 	public analyze(symbol: string, companyName?: string): StockAnalysisResult {
 		if (this.priceData.length === 0) {
-			throw new DataFetchError(
-				"No price data available for analysis",
-				"NO_DATA",
-			);
+			throw new DataFetchError("No price data available for analysis", "NO_DATA");
 		}
 
 		// 終値データの抽出
@@ -87,10 +81,7 @@ export class TechnicalAnalyzer {
 	}
 
 	// Yahoo Finance APIからのデータ取得
-	public static async fetchData(
-		symbol: string,
-		period = "2y",
-	): Promise<PriceData[]> {
+	public static async fetchData(symbol: string, period = "2y"): Promise<PriceData[]> {
 		try {
 			const result = await yahooFinance.chart(symbol, {
 				period1: TechnicalAnalyzer.getPeriodStartDate(period),
@@ -99,10 +90,7 @@ export class TechnicalAnalyzer {
 			});
 
 			if (!result || !result.quotes || result.quotes.length === 0) {
-				throw new DataFetchError(
-					`No data found for symbol: ${symbol}`,
-					"NO_DATA_FOUND",
-				);
+				throw new DataFetchError(`No data found for symbol: ${symbol}`, "NO_DATA_FOUND");
 			}
 
 			// Yahoo Finance chart API形式を内部形式に変換
@@ -131,15 +119,9 @@ export class TechnicalAnalyzer {
 	private calculateAllIndicators(closePrices: number[]): TechnicalIndicators {
 		// 移動平均線の計算
 		const movingAverages = {
-			ma25: this.safeCalculate(() =>
-				MovingAverageCalculator.calculate(closePrices, 25),
-			),
-			ma50: this.safeCalculate(() =>
-				MovingAverageCalculator.calculate(closePrices, 50),
-			),
-			ma200: this.safeCalculate(() =>
-				MovingAverageCalculator.calculate(closePrices, 200),
-			),
+			ma25: this.safeCalculate(() => MovingAverageCalculator.calculate(closePrices, 25)),
+			ma50: this.safeCalculate(() => MovingAverageCalculator.calculate(closePrices, 50)),
+			ma200: this.safeCalculate(() => MovingAverageCalculator.calculate(closePrices, 200)),
 		};
 
 		// RSIの計算
@@ -176,20 +158,14 @@ export class TechnicalAnalyzer {
 		}
 
 		const current = this.priceData[this.priceData.length - 1].close;
-		const previous =
-			this.priceData.length > 1
-				? this.priceData[this.priceData.length - 2].close
-				: current;
+		const previous = this.priceData.length > 1 ? this.priceData[this.priceData.length - 2].close : current;
 		const change = current - previous;
 		const changePercent = previous !== 0 ? (change / previous) * 100 : 0;
 
 		return {
 			current: Calculator.round(current, this.config.precision.price),
 			change: Calculator.round(change, this.config.precision.price),
-			changePercent: Calculator.round(
-				changePercent,
-				this.config.precision.percentage,
-			),
+			changePercent: Calculator.round(changePercent, this.config.precision.percentage),
 		};
 	}
 
@@ -215,10 +191,7 @@ export class TechnicalAnalyzer {
 	}
 
 	// トレンド分析
-	private analyzeTrend(
-		closePrices: number[],
-		indicators: TechnicalIndicators,
-	): "upward" | "downward" | "sideways" {
+	private analyzeTrend(closePrices: number[], indicators: TechnicalIndicators): "upward" | "downward" | "sideways" {
 		const currentPrice = closePrices[closePrices.length - 1];
 		const { ma25, ma50, ma200 } = indicators.movingAverages;
 
@@ -226,58 +199,24 @@ export class TechnicalAnalyzer {
 		let downwardSignals = 0;
 
 		// 現在価格と移動平均線の比較
-		if (ma25 !== undefined && !Number.isNaN(ma25) && currentPrice > ma25)
-			upwardSignals++;
-		else if (ma25 !== undefined && !Number.isNaN(ma25) && currentPrice < ma25)
-			downwardSignals++;
+		if (ma25 !== undefined && !Number.isNaN(ma25) && currentPrice > ma25) upwardSignals++;
+		else if (ma25 !== undefined && !Number.isNaN(ma25) && currentPrice < ma25) downwardSignals++;
 
-		if (ma50 !== undefined && !Number.isNaN(ma50) && currentPrice > ma50)
-			upwardSignals++;
-		else if (ma50 !== undefined && !Number.isNaN(ma50) && currentPrice < ma50)
-			downwardSignals++;
+		if (ma50 !== undefined && !Number.isNaN(ma50) && currentPrice > ma50) upwardSignals++;
+		else if (ma50 !== undefined && !Number.isNaN(ma50) && currentPrice < ma50) downwardSignals++;
 
-		if (ma200 !== undefined && !Number.isNaN(ma200) && currentPrice > ma200)
-			upwardSignals++;
-		else if (
-			ma200 !== undefined &&
-			!Number.isNaN(ma200) &&
-			currentPrice < ma200
-		)
-			downwardSignals++;
+		if (ma200 !== undefined && !Number.isNaN(ma200) && currentPrice > ma200) upwardSignals++;
+		else if (ma200 !== undefined && !Number.isNaN(ma200) && currentPrice < ma200) downwardSignals++;
 
 		// 移動平均線同士の位置関係
-		if (
-			ma25 !== undefined &&
-			ma50 !== undefined &&
-			!Number.isNaN(ma25) &&
-			!Number.isNaN(ma50) &&
-			ma25 > ma50
-		)
+		if (ma25 !== undefined && ma50 !== undefined && !Number.isNaN(ma25) && !Number.isNaN(ma50) && ma25 > ma50)
 			upwardSignals++;
-		else if (
-			ma25 !== undefined &&
-			ma50 !== undefined &&
-			!Number.isNaN(ma25) &&
-			!Number.isNaN(ma50) &&
-			ma25 < ma50
-		)
+		else if (ma25 !== undefined && ma50 !== undefined && !Number.isNaN(ma25) && !Number.isNaN(ma50) && ma25 < ma50)
 			downwardSignals++;
 
-		if (
-			ma50 !== undefined &&
-			ma200 !== undefined &&
-			!Number.isNaN(ma50) &&
-			!Number.isNaN(ma200) &&
-			ma50 > ma200
-		)
+		if (ma50 !== undefined && ma200 !== undefined && !Number.isNaN(ma50) && !Number.isNaN(ma200) && ma50 > ma200)
 			upwardSignals++;
-		else if (
-			ma50 !== undefined &&
-			ma200 !== undefined &&
-			!Number.isNaN(ma50) &&
-			!Number.isNaN(ma200) &&
-			ma50 < ma200
-		)
+		else if (ma50 !== undefined && ma200 !== undefined && !Number.isNaN(ma50) && !Number.isNaN(ma200) && ma50 < ma200)
 			downwardSignals++;
 
 		if (upwardSignals > downwardSignals + 1) return "upward";
@@ -286,10 +225,7 @@ export class TechnicalAnalyzer {
 	}
 
 	// モメンタム分析
-	private analyzeMomentum(
-		closePrices: number[],
-		indicators: TechnicalIndicators,
-	): "positive" | "negative" | "neutral" {
+	private analyzeMomentum(closePrices: number[], indicators: TechnicalIndicators): "positive" | "negative" | "neutral" {
 		let positiveSignals = 0;
 		let negativeSignals = 0;
 
@@ -318,9 +254,7 @@ export class TechnicalAnalyzer {
 	}
 
 	// 強度分析
-	private analyzeStrength(
-		indicators: TechnicalIndicators,
-	): "strong" | "moderate" | "weak" {
+	private analyzeStrength(indicators: TechnicalIndicators): "strong" | "moderate" | "weak" {
 		const { rsi14 } = indicators.rsi;
 		const { histogram } = indicators.macd;
 
@@ -405,9 +339,7 @@ export class TechnicalAnalyzer {
 		// API呼び出し最小化：並列取得
 		const [priceData, financialMetrics] = await Promise.all([
 			TechnicalAnalyzer.fetchData(symbol, period),
-			includeFinancials
-				? FinancialAnalyzer.getFinancialMetrics(symbol).catch(() => null)
-				: Promise.resolve(null),
+			includeFinancials ? FinancialAnalyzer.getFinancialMetrics(symbol).catch(() => null) : Promise.resolve(null),
 		]);
 
 		// 基本分析実行
@@ -429,11 +361,7 @@ export class TechnicalAnalyzer {
 		const closePrices = DataProcessor.extractClosePrices(this.priceData);
 
 		// 各指標を安全に計算（エラーが発生しても他の指標は継続）
-		const safeCalculate = <T>(
-			calculationFn: () => T,
-			fallbackFn: () => T,
-			indicatorName: string,
-		): T => {
+		const safeCalculate = <T>(calculationFn: () => T, fallbackFn: () => T, indicatorName: string): T => {
 			try {
 				return calculationFn();
 			} catch (error) {
@@ -529,10 +457,7 @@ export class TechnicalAnalyzer {
 	}
 
 	// 新規：日本語レポート生成メソッド
-	public static generateJapaneseReportFromAnalysis(
-		analysis: ComprehensiveStockAnalysisResult,
-		days: number,
-	): string {
+	public static generateJapaneseReportFromAnalysis(analysis: ComprehensiveStockAnalysisResult, days: number): string {
 		return generateJapaneseReport(analysis, days);
 	}
 }

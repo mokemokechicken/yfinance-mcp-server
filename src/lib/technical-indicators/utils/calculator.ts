@@ -6,17 +6,12 @@ export class Calculator {
 		if (values.length === 0) return 0;
 
 		const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-		const variance =
-			values.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
-			values.length;
+		const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
 		return Math.sqrt(variance);
 	}
 
 	// 指数移動平均計算（業界標準実装）
-	public static exponentialMovingAverage(
-		values: number[],
-		period: number,
-	): number[] {
+	public static exponentialMovingAverage(values: number[], period: number): number[] {
 		// 入力検証
 		ValidationUtils.validatePricesArray(values);
 		ValidationUtils.validatePeriod(period);
@@ -30,8 +25,7 @@ export class Calculator {
 		const multiplier = 2 / (period + 1);
 
 		// 標準的な初期値計算: 最初のperiod分の単純平均
-		const initialSMA =
-			values.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
+		const initialSMA = values.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
 
 		// period-1番目に初期値をセット（標準実装）
 		ema[period - 1] = initialSMA;
@@ -46,10 +40,7 @@ export class Calculator {
 	}
 
 	// シンプル移動平均計算
-	public static simpleMovingAverage(
-		values: number[],
-		period: number,
-	): number[] {
+	public static simpleMovingAverage(values: number[], period: number): number[] {
 		// 入力検証（統一）
 		ValidationUtils.validatePricesArray(values);
 		ValidationUtils.validatePeriod(period);
@@ -59,9 +50,7 @@ export class Calculator {
 		const sma: number[] = [];
 
 		for (let i = period - 1; i < values.length; i++) {
-			const sum = values
-				.slice(i - period + 1, i + 1)
-				.reduce((sum, value) => sum + value, 0);
+			const sum = values.slice(i - period + 1, i + 1).reduce((sum, value) => sum + value, 0);
 			sma.push(sum / period);
 		}
 

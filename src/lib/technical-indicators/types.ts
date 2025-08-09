@@ -96,9 +96,7 @@ export interface ExtendedIndicatorsResult {
 // 包括的分析結果型
 export interface ComprehensiveStockAnalysisResult extends StockAnalysisResult {
 	// 財務指標
-	financialMetrics:
-		| import("./financial-indicators/types").FinancialMetricsResult
-		| null;
+	financialMetrics: import("./financial-indicators/types").FinancialMetricsResult | null;
 
 	// 拡張テクニカル指標
 	extendedIndicators: ExtendedIndicatorsResult;

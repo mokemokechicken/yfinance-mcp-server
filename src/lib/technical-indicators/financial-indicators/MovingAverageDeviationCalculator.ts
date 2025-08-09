@@ -14,10 +14,7 @@ export class MovingAverageDeviationCalculator {
 	 * @param period 移動平均期間
 	 * @returns 移動平均乖離率結果
 	 */
-	static calculate(
-		prices: number[],
-		period: number,
-	): MovingAverageDeviationResult {
+	static calculate(prices: number[], period: number): MovingAverageDeviationResult {
 		if (prices.length === 0) {
 			throw new Error("価格データが空です");
 		}
@@ -55,10 +52,7 @@ export class MovingAverageDeviationCalculator {
 	 * @param periods 期間配列（例: [25, 50, 200]）
 	 * @returns 乖離率結果配列
 	 */
-	static calculateMultiple(
-		prices: number[],
-		periods: number[],
-	): MovingAverageDeviationResult[] {
+	static calculateMultiple(prices: number[], periods: number[]): MovingAverageDeviationResult[] {
 		if (periods.length === 0) {
 			throw new Error("期間配列が空です");
 		}
@@ -68,9 +62,7 @@ export class MovingAverageDeviationCalculator {
 				return MovingAverageDeviationCalculator.calculate(prices, period);
 			} catch (error) {
 				// 期間が長すぎる場合などはスキップ
-				throw new Error(
-					`期間${period}での計算に失敗: ${(error as Error).message}`,
-				);
+				throw new Error(`期間${period}での計算に失敗: ${(error as Error).message}`);
 			}
 		});
 	}
@@ -114,9 +106,7 @@ export class MovingAverageDeviationCalculator {
 		const signals = results.map((result) => ({
 			period: result.period,
 			deviation: result.deviation,
-			signal: MovingAverageDeviationCalculator.getDeviationSignal(
-				result.deviation,
-			),
+			signal: MovingAverageDeviationCalculator.getDeviationSignal(result.deviation),
 		}));
 
 		// シグナルのカウント
@@ -143,16 +133,10 @@ export class MovingAverageDeviationCalculator {
 		} else if (signalCounts.strong_below >= totalCount * 0.6) {
 			overallSignal = "strong_below";
 			confidence = "high";
-		} else if (
-			signalCounts.above + signalCounts.strong_above >=
-			totalCount * 0.6
-		) {
+		} else if (signalCounts.above + signalCounts.strong_above >= totalCount * 0.6) {
 			overallSignal = "above";
 			confidence = "medium";
-		} else if (
-			signalCounts.below + signalCounts.strong_below >=
-			totalCount * 0.6
-		) {
+		} else if (signalCounts.below + signalCounts.strong_below >= totalCount * 0.6) {
 			overallSignal = "below";
 			confidence = "medium";
 		} else {
@@ -212,19 +196,14 @@ export class MovingAverageDeviationCalculator {
 		averageDeviation: number;
 	} {
 		if (pricesHistory.length < analysisLength) {
-			throw new Error(
-				`トレンド分析には最低${analysisLength}日分のデータが必要です`,
-			);
+			throw new Error(`トレンド分析には最低${analysisLength}日分のデータが必要です`);
 		}
 
 		// 各日の乖離率を計算
 		const recentData = pricesHistory.slice(-analysisLength);
 		const deviationHistory = recentData.map((prices) => {
 			try {
-				const result = MovingAverageDeviationCalculator.calculate(
-					prices,
-					period,
-				);
+				const result = MovingAverageDeviationCalculator.calculate(prices, period);
 				return result.deviation;
 			} catch {
 				return 0; // エラーの場合は0とする
@@ -232,9 +211,7 @@ export class MovingAverageDeviationCalculator {
 		});
 
 		// 平均乖離率
-		const averageDeviation =
-			deviationHistory.reduce((sum, dev) => sum + dev, 0) /
-			deviationHistory.length;
+		const averageDeviation = deviationHistory.reduce((sum, dev) => sum + dev, 0) / deviationHistory.length;
 
 		// トレンド判定（線形回帰の傾き）
 		const n = deviationHistory.length;

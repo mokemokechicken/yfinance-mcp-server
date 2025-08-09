@@ -27,10 +27,7 @@ export class DataProcessor {
 					volume: Number(item.volume || 0),
 				};
 			} catch (error) {
-				throw new ValidationError(
-					`Invalid data at index ${index}`,
-					"DATA_CONVERSION_ERROR",
-				);
+				throw new ValidationError(`Invalid data at index ${index}`, "DATA_CONVERSION_ERROR");
 			}
 		});
 	}
@@ -49,12 +46,7 @@ export class DataProcessor {
 			const item = cleaned[i];
 
 			// NaN値のチェック
-			if (
-				Number.isNaN(item.open) ||
-				Number.isNaN(item.high) ||
-				Number.isNaN(item.low) ||
-				Number.isNaN(item.close)
-			) {
+			if (Number.isNaN(item.open) || Number.isNaN(item.high) || Number.isNaN(item.low) || Number.isNaN(item.close)) {
 				if (i > 0) {
 					// 前の値で補完
 					const prev = cleaned[i - 1];

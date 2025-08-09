@@ -11,23 +11,13 @@ export interface BollingerBandsResult {
 
 export class BollingerBandsCalculator {
 	// ボリンジャーバンドの計算
-	public static calculate(
-		prices: number[],
-		period = 20,
-		standardDeviations = 2,
-	): BollingerBandsResult {
+	public static calculate(prices: number[], period = 20, standardDeviations = 2): BollingerBandsResult {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
 		}
 
 		if (prices.length < period) {
-			throw new CalculationError(
-				`Not enough data points. Need ${period}, got ${prices.length}`,
-				"INSUFFICIENT_DATA",
-			);
+			throw new CalculationError(`Not enough data points. Need ${period}, got ${prices.length}`, "INSUFFICIENT_DATA");
 		}
 
 		// 移動平均の計算（中央線）
@@ -42,15 +32,11 @@ export class BollingerBandsCalculator {
 		const lower = middle - standardDeviations * stdDev;
 
 		// バンド幅の計算（上部バンド - 下部バンド）
-		const bandwidth =
-			middle > 0 ? Calculator.round((upper - lower) / middle, 4) : 0;
+		const bandwidth = middle > 0 ? Calculator.round((upper - lower) / middle, 4) : 0;
 
 		// %Bの計算（現在価格がバンド内のどの位置にあるか）
 		const currentPrice = prices[prices.length - 1];
-		const percentB =
-			upper > lower
-				? Calculator.round((currentPrice - lower) / (upper - lower), 4)
-				: 0.5; // バンド幅が0の場合は中央値
+		const percentB = upper > lower ? Calculator.round((currentPrice - lower) / (upper - lower), 4) : 0.5; // バンド幅が0の場合は中央値
 
 		return {
 			upper: Calculator.round(upper, 3),
@@ -74,10 +60,7 @@ export class BollingerBandsCalculator {
 		percentB: number[];
 	} {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
 		}
 
 		if (prices.length < period) {
@@ -109,17 +92,10 @@ export class BollingerBandsCalculator {
 			middle.push(Calculator.round(avg, 3));
 			lower.push(Calculator.round(lowerBand, 3));
 
-			const bw =
-				avg > 0 ? Calculator.round((upperBand - lowerBand) / avg, 4) : 0;
+			const bw = avg > 0 ? Calculator.round((upperBand - lowerBand) / avg, 4) : 0;
 			bandwidth.push(bw);
 
-			const pb =
-				upperBand > lowerBand
-					? Calculator.round(
-							(prices[i] - lowerBand) / (upperBand - lowerBand),
-							4,
-						)
-					: 0.5; // バンド幅が0の場合は中央値
+			const pb = upperBand > lowerBand ? Calculator.round((prices[i] - lowerBand) / (upperBand - lowerBand), 4) : 0.5; // バンド幅が0の場合は中央値
 			percentB.push(pb);
 		}
 
@@ -133,10 +109,7 @@ export class BollingerBandsCalculator {
 	}
 
 	// ボリンジャーバンドのシグナル判定
-	public static getSignal(
-		result: BollingerBandsResult,
-		currentPrice: number,
-	): "buy" | "sell" | "neutral" {
+	public static getSignal(result: BollingerBandsResult, currentPrice: number): "buy" | "sell" | "neutral" {
 		const { upper, lower, percentB } = result;
 
 		// 現在価格が下部バンドを下回る → 買いシグナル
@@ -164,17 +137,9 @@ export class BollingerBandsCalculator {
 	}
 
 	// スクイーズ（収束）の検出
-	public static detectSqueeze(
-		prices: number[],
-		period = 20,
-		lookback = 5,
-	): boolean {
+	public static detectSqueeze(prices: number[], period = 20, lookback = 5): boolean {
 		try {
-			const bbArray = BollingerBandsCalculator.calculateArray(
-				prices,
-				period,
-				2,
-			);
+			const bbArray = BollingerBandsCalculator.calculateArray(prices, period, 2);
 
 			if (bbArray.bandwidth.length < lookback) return false;
 
@@ -189,25 +154,14 @@ export class BollingerBandsCalculator {
 	}
 
 	// エクスパンション（拡張）の検出
-	public static detectExpansion(
-		prices: number[],
-		period = 20,
-		lookback = 5,
-	): boolean {
+	public static detectExpansion(prices: number[], period = 20, lookback = 5): boolean {
 		try {
-			const bbArray = BollingerBandsCalculator.calculateArray(
-				prices,
-				period,
-				2,
-			);
+			const bbArray = BollingerBandsCalculator.calculateArray(prices, period, 2);
 
 			if (bbArray.bandwidth.length < lookback * 2) return false;
 
 			const recentBandwidth = bbArray.bandwidth.slice(-lookback);
-			const previousBandwidth = bbArray.bandwidth.slice(
-				-lookback * 2,
-				-lookback,
-			);
+			const previousBandwidth = bbArray.bandwidth.slice(-lookback * 2, -lookback);
 
 			const recentAvg = Calculator.average(recentBandwidth);
 			const previousAvg = Calculator.average(previousBandwidth);
@@ -220,11 +174,7 @@ export class BollingerBandsCalculator {
 	}
 
 	// Bollinger Bounce戦略の判定
-	public static getBounceSignal(
-		prices: number[],
-		period = 20,
-		lookback = 3,
-	): "bounce_up" | "bounce_down" | "none" {
+	public static getBounceSignal(prices: number[], period = 20, lookback = 3): "bounce_up" | "bounce_down" | "none" {
 		try {
 			if (prices.length < period + lookback) return "none";
 
@@ -232,9 +182,7 @@ export class BollingerBandsCalculator {
 			const recentPrices = Calculator.lastN(prices, lookback);
 
 			// 下部バンドでのバウンス検出
-			const touchedLowerBand = recentPrices.some(
-				(price) => price <= result.lower * 1.01,
-			);
+			const touchedLowerBand = recentPrices.some((price) => price <= result.lower * 1.01);
 			const currentlyAboveLower = prices[prices.length - 1] > result.lower;
 
 			if (touchedLowerBand && currentlyAboveLower) {
@@ -242,9 +190,7 @@ export class BollingerBandsCalculator {
 			}
 
 			// 上部バンドでのバウンス検出
-			const touchedUpperBand = recentPrices.some(
-				(price) => price >= result.upper * 0.99,
-			);
+			const touchedUpperBand = recentPrices.some((price) => price >= result.upper * 0.99);
 			const currentlyBelowUpper = prices[prices.length - 1] < result.upper;
 
 			if (touchedUpperBand && currentlyBelowUpper) {

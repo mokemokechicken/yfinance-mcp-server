@@ -13,15 +13,9 @@ export interface VolumeAnalysisResult {
 
 export class VolumeAnalysisCalculator {
 	// 出来高分析の計算
-	public static calculate(
-		priceData: PriceData[],
-		period = 20,
-	): VolumeAnalysisResult {
+	public static calculate(priceData: PriceData[], period = 20): VolumeAnalysisResult {
 		if (!Array.isArray(priceData) || priceData.length === 0) {
-			throw new CalculationError(
-				"Price data array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Price data array is empty or invalid", "INVALID_PRICES");
 		}
 
 		if (priceData.length < period) {
@@ -39,26 +33,19 @@ export class VolumeAnalysisCalculator {
 		const averageVolume = Calculator.average(volumes);
 
 		// 相対出来高の計算
-		const relativeVolume =
-			averageVolume > 0 ? currentVolume / averageVolume : 1;
+		const relativeVolume = averageVolume > 0 ? currentVolume / averageVolume : 1;
 
 		// 出来高トレンドの判定
-		const volumeTrend =
-			VolumeAnalysisCalculator.calculateVolumeTrend(recentData);
+		const volumeTrend = VolumeAnalysisCalculator.calculateVolumeTrend(recentData);
 
 		// 出来高急増の検出
-		const volumeSpike = VolumeAnalysisCalculator.detectVolumeSpike(
-			recentData,
-			period,
-		);
+		const volumeSpike = VolumeAnalysisCalculator.detectVolumeSpike(recentData, period);
 
 		// 価格と出来高の相関強度
-		const priceVolumeStrength =
-			VolumeAnalysisCalculator.calculatePriceVolumeStrength(recentData);
+		const priceVolumeStrength = VolumeAnalysisCalculator.calculatePriceVolumeStrength(recentData);
 
 		// 蓄積・分散の判定
-		const accumulation =
-			VolumeAnalysisCalculator.calculateAccumulationDistribution(recentData);
+		const accumulation = VolumeAnalysisCalculator.calculateAccumulationDistribution(recentData);
 
 		return {
 			averageVolume: Calculator.round(averageVolume, 0),
@@ -71,10 +58,7 @@ export class VolumeAnalysisCalculator {
 	}
 
 	// 出来高トレンドの計算
-	private static calculateVolumeTrend(
-		priceData: PriceData[],
-		lookback = 5,
-	): "increasing" | "decreasing" | "stable" {
+	private static calculateVolumeTrend(priceData: PriceData[], lookback = 5): "increasing" | "decreasing" | "stable" {
 		if (priceData.length < lookback * 2) return "stable";
 
 		const recent = Calculator.lastN(priceData, lookback);
@@ -91,11 +75,7 @@ export class VolumeAnalysisCalculator {
 	}
 
 	// 出来高急増の検出
-	private static detectVolumeSpike(
-		priceData: PriceData[],
-		period: number,
-		spikeThreshold = 2.0,
-	): boolean {
+	private static detectVolumeSpike(priceData: PriceData[], period: number, spikeThreshold = 2.0): boolean {
 		if (priceData.length < period) return false;
 
 		const volumes = priceData.map((d) => d.volume);
@@ -106,9 +86,7 @@ export class VolumeAnalysisCalculator {
 	}
 
 	// 価格と出来高の相関強度の計算
-	private static calculatePriceVolumeStrength(
-		priceData: PriceData[],
-	): "strong" | "moderate" | "weak" {
+	private static calculatePriceVolumeStrength(priceData: PriceData[]): "strong" | "moderate" | "weak" {
 		if (priceData.length < 10) return "weak";
 
 		// 価格変動率と出来高変動率の相関を計算
@@ -116,23 +94,16 @@ export class VolumeAnalysisCalculator {
 		const volumeChanges: number[] = [];
 
 		for (let i = 1; i < priceData.length; i++) {
-			const priceChange =
-				(priceData[i].close - priceData[i - 1].close) / priceData[i - 1].close;
+			const priceChange = (priceData[i].close - priceData[i - 1].close) / priceData[i - 1].close;
 			const volumeChange =
-				priceData[i - 1].volume > 0
-					? (priceData[i].volume - priceData[i - 1].volume) /
-						priceData[i - 1].volume
-					: 0;
+				priceData[i - 1].volume > 0 ? (priceData[i].volume - priceData[i - 1].volume) / priceData[i - 1].volume : 0;
 
 			priceChanges.push(Math.abs(priceChange));
 			volumeChanges.push(Math.abs(volumeChange));
 		}
 
 		// 簡易相関係数の計算
-		const correlation = VolumeAnalysisCalculator.calculateCorrelation(
-			priceChanges,
-			volumeChanges,
-		);
+		const correlation = VolumeAnalysisCalculator.calculateCorrelation(priceChanges, volumeChanges);
 
 		if (correlation > 0.6) return "strong";
 		if (correlation > 0.3) return "moderate";
@@ -151,9 +122,7 @@ export class VolumeAnalysisCalculator {
 		const sumYY = y.reduce((sum, val) => sum + val * val, 0);
 
 		const numerator = n * sumXY - sumX * sumY;
-		const denominator = Math.sqrt(
-			(n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY),
-		);
+		const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
 
 		return denominator === 0 ? 0 : numerator / denominator;
 	}
@@ -244,19 +213,13 @@ export class VolumeAnalysisCalculator {
 	}
 
 	// 出来高移動平均線の計算
-	public static calculateVolumeMA(
-		priceData: PriceData[],
-		period = 20,
-	): number[] {
+	public static calculateVolumeMA(priceData: PriceData[], period = 20): number[] {
 		const volumes = priceData.map((d) => d.volume);
 		return Calculator.simpleMovingAverage(volumes, period);
 	}
 
 	// 相対出来高の配列を計算
-	public static calculateRelativeVolumeArray(
-		priceData: PriceData[],
-		period = 20,
-	): number[] {
+	public static calculateRelativeVolumeArray(priceData: PriceData[], period = 20): number[] {
 		if (priceData.length < period) return [];
 
 		const relativeVolumes: number[] = [];
@@ -275,10 +238,7 @@ export class VolumeAnalysisCalculator {
 	}
 
 	// チャイキンマネーフロー（CMF）の計算
-	public static calculateChaikinMoneyFlow(
-		priceData: PriceData[],
-		period = 20,
-	): number {
+	public static calculateChaikinMoneyFlow(priceData: PriceData[], period = 20): number {
 		if (priceData.length < period) {
 			throw new CalculationError(
 				`Not enough data points for CMF. Need ${period}, got ${priceData.length}`,
@@ -294,8 +254,7 @@ export class VolumeAnalysisCalculator {
 			const { high, low, close, volume } = data;
 
 			// マネーフロー倍数の計算
-			const moneyFlowMultiplier =
-				high - low > 0 ? (close - low - (high - close)) / (high - low) : 0;
+			const moneyFlowMultiplier = high - low > 0 ? (close - low - (high - close)) / (high - low) : 0;
 
 			// マネーフローボリュームの計算
 			const moneyFlowVolume = moneyFlowMultiplier * volume;
@@ -320,8 +279,6 @@ export class VolumeAnalysisCalculator {
 			totalVolume += data.volume;
 		}
 
-		return totalVolume > 0
-			? Calculator.round(totalVolumePrice / totalVolume, 2)
-			: 0;
+		return totalVolume > 0 ? Calculator.round(totalVolumePrice / totalVolume, 2) : 0;
 	}
 }

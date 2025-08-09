@@ -14,15 +14,9 @@ export interface VWAPResult {
 
 export class VWAPCalculator {
 	// VWAP（出来高加重平均価格）の計算
-	public static calculate(
-		priceData: PriceData[],
-		standardDeviations = 1,
-	): VWAPResult {
+	public static calculate(priceData: PriceData[], standardDeviations = 1): VWAPResult {
 		if (!Array.isArray(priceData) || priceData.length === 0) {
-			throw new CalculationError(
-				"Price data array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Price data array is empty or invalid", "INVALID_PRICES");
 		}
 
 		// VWAP計算用のデータ準備
@@ -44,21 +38,14 @@ export class VWAPCalculator {
 		}
 
 		if (totalVolume === 0) {
-			throw new CalculationError(
-				"Total volume is zero, cannot calculate VWAP",
-				"ZERO_VOLUME",
-			);
+			throw new CalculationError("Total volume is zero, cannot calculate VWAP", "ZERO_VOLUME");
 		}
 
 		// VWAP = Σ(代表価格 × 出来高) / Σ(出来高)
 		const vwap = totalVolumePrice / totalVolume;
 
 		// VWAP標準偏差の計算
-		const deviation = VWAPCalculator.calculateVWAPStandardDeviation(
-			priceData,
-			vwap,
-			totalVolume,
-		);
+		const deviation = VWAPCalculator.calculateVWAPStandardDeviation(priceData, vwap, totalVolume);
 
 		// バンドの計算
 		const upperBand = vwap + standardDeviations * deviation;
@@ -102,10 +89,7 @@ export class VWAPCalculator {
 			cumulativeVolumePrice += typicalPrice * data.volume;
 			cumulativeVolume += data.volume;
 
-			const vwap =
-				cumulativeVolume > 0
-					? cumulativeVolumePrice / cumulativeVolume
-					: typicalPrice;
+			const vwap = cumulativeVolume > 0 ? cumulativeVolumePrice / cumulativeVolume : typicalPrice;
 
 			vwapArray.push(Calculator.round(vwap, 2));
 		}
@@ -114,10 +98,7 @@ export class VWAPCalculator {
 	}
 
 	// 移動VWAP（指定期間の出来高加重平均）
-	public static calculateMovingVWAP(
-		priceData: PriceData[],
-		period: number,
-	): number[] {
+	public static calculateMovingVWAP(priceData: PriceData[], period: number): number[] {
 		if (priceData.length < period) return [];
 
 		const movingVWAP: number[] = [];
@@ -134,10 +115,7 @@ export class VWAPCalculator {
 				totalVolume += data.volume;
 			}
 
-			const vwap =
-				totalVolume > 0
-					? totalVolumePrice / totalVolume
-					: periodData[periodData.length - 1].close;
+			const vwap = totalVolume > 0 ? totalVolumePrice / totalVolume : periodData[periodData.length - 1].close;
 
 			movingVWAP.push(Calculator.round(vwap, 2));
 		}
@@ -146,11 +124,7 @@ export class VWAPCalculator {
 	}
 
 	// VWAP標準偏差の計算
-	private static calculateVWAPStandardDeviation(
-		priceData: PriceData[],
-		vwap: number,
-		totalVolume: number,
-	): number {
+	private static calculateVWAPStandardDeviation(priceData: PriceData[], vwap: number, totalVolume: number): number {
 		let varianceSum = 0;
 
 		for (const data of priceData) {
@@ -164,10 +138,7 @@ export class VWAPCalculator {
 	}
 
 	// シグナル強度の計算
-	private static calculateSignalStrength(
-		priceData: PriceData[],
-		vwap: number,
-	): "strong" | "moderate" | "weak" {
+	private static calculateSignalStrength(priceData: PriceData[], vwap: number): "strong" | "moderate" | "weak" {
 		if (priceData.length < 5) return "weak";
 
 		const recentPrices = Calculator.lastN(priceData, 5);
@@ -191,10 +162,7 @@ export class VWAPCalculator {
 	}
 
 	// トレンドの計算
-	private static calculateTrend(
-		priceData: PriceData[],
-		currentVWAP: number,
-	): "bullish" | "bearish" | "neutral" {
+	private static calculateTrend(priceData: PriceData[], currentVWAP: number): "bullish" | "bearish" | "neutral" {
 		if (priceData.length < 10) return "neutral";
 
 		// 過去のVWAPと比較してトレンドを判定
@@ -210,8 +178,7 @@ export class VWAPCalculator {
 			totalVolume += data.volume;
 		}
 
-		const earlierVWAP =
-			totalVolume > 0 ? totalVolumePrice / totalVolume : currentVWAP;
+		const earlierVWAP = totalVolume > 0 ? totalVolumePrice / totalVolume : currentVWAP;
 
 		const change = (currentVWAP - earlierVWAP) / earlierVWAP;
 
@@ -221,10 +188,7 @@ export class VWAPCalculator {
 	}
 
 	// VWAPのサポート・レジスタンス判定
-	public static getSupportResistanceLevel(
-		priceData: PriceData[],
-		vwap: number,
-	): "support" | "resistance" | "neutral" {
+	public static getSupportResistanceLevel(priceData: PriceData[], vwap: number): "support" | "resistance" | "neutral" {
 		if (priceData.length < 3) return "neutral";
 
 		const recentPrices = Calculator.lastN(priceData, 3);
@@ -289,8 +253,7 @@ export class VWAPCalculator {
 		const currentPrice = priceData[priceData.length - 1].close;
 
 		// VWAPから大きく乖離している場合の平均回帰狙い
-		const deviationFromVWAP =
-			Math.abs(currentPrice - vwapResult.vwap) / vwapResult.deviation;
+		const deviationFromVWAP = Math.abs(currentPrice - vwapResult.vwap) / vwapResult.deviation;
 
 		if (deviationFromVWAP > reversionThreshold) {
 			if (currentPrice > vwapResult.vwap) {
@@ -303,10 +266,7 @@ export class VWAPCalculator {
 	}
 
 	// アンカードVWAP（特定日からのVWAP）
-	public static calculateAnchoredVWAP(
-		priceData: PriceData[],
-		anchorIndex: number,
-	): number[] {
+	public static calculateAnchoredVWAP(priceData: PriceData[], anchorIndex: number): number[] {
 		if (anchorIndex >= priceData.length) return [];
 
 		const anchoredData = priceData.slice(anchorIndex);
@@ -329,12 +289,9 @@ export class VWAPCalculator {
 			totalVolume += data.volume;
 		}
 
-		const avgWeightedDeviation =
-			totalVolume > 0 ? totalVolumeWeightedDeviation / totalVolume : 0;
+		const avgWeightedDeviation = totalVolume > 0 ? totalVolumeWeightedDeviation / totalVolume : 0;
 
 		// 効率性 = 1 / (平均乖離率 + 1)（0〜1の値）
-		return avgWeightedDeviation > 0
-			? Calculator.round(1 / (avgWeightedDeviation / vwap + 1), 4)
-			: 1;
+		return avgWeightedDeviation > 0 ? Calculator.round(1 / (avgWeightedDeviation / vwap + 1), 4) : 1;
 	}
 }

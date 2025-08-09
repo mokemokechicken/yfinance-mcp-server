@@ -9,16 +9,9 @@ export interface StochasticResult {
 
 export class StochasticCalculator {
 	// ストキャスティクスの計算（OHLCデータを使用）
-	public static calculateWithOHLC(
-		priceData: PriceData[],
-		kPeriod = 14,
-		dPeriod = 3,
-	): StochasticResult {
+	public static calculateWithOHLC(priceData: PriceData[], kPeriod = 14, dPeriod = 3): StochasticResult {
 		if (!Array.isArray(priceData) || priceData.length === 0) {
-			throw new CalculationError(
-				"Price data array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Price data array is empty or invalid", "INVALID_PRICES");
 		}
 
 		if (priceData.length < kPeriod + dPeriod - 1) {
@@ -49,16 +42,9 @@ export class StochasticCalculator {
 	}
 
 	// 終値のみを使用した簡易版（HLを終値で代用）
-	public static calculate(
-		closePrices: number[],
-		kPeriod = 14,
-		dPeriod = 3,
-	): StochasticResult {
+	public static calculate(closePrices: number[], kPeriod = 14, dPeriod = 3): StochasticResult {
 		if (!Array.isArray(closePrices) || closePrices.length === 0) {
-			throw new CalculationError(
-				"Close prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Close prices array is empty or invalid", "INVALID_PRICES");
 		}
 
 		if (closePrices.length < kPeriod + dPeriod - 1) {
@@ -70,9 +56,7 @@ export class StochasticCalculator {
 
 		// 終値をHigh/Lowとして扱う簡易版
 		const priceData: PriceData[] = closePrices.map((close, index) => ({
-			date: new Date(
-				Date.now() - (closePrices.length - index) * 24 * 60 * 60 * 1000,
-			),
+			date: new Date(Date.now() - (closePrices.length - index) * 24 * 60 * 60 * 1000),
 			open: close,
 			high: close,
 			low: close,
@@ -84,10 +68,7 @@ export class StochasticCalculator {
 	}
 
 	// %K値の配列を計算
-	private static calculateKArray(
-		priceData: PriceData[],
-		period: number,
-	): number[] {
+	private static calculateKArray(priceData: PriceData[], period: number): number[] {
 		const kValues: number[] = [];
 
 		for (let i = period - 1; i < priceData.length; i++) {
@@ -146,9 +127,7 @@ export class StochasticCalculator {
 	}
 
 	// ストキャスティクスのシグナル判定
-	public static getSignal(
-		result: StochasticResult,
-	): "buy" | "sell" | "neutral" {
+	public static getSignal(result: StochasticResult): "buy" | "sell" | "neutral" {
 		const { k, d } = result;
 
 		// 買われすぎ・売られすぎの判定
@@ -164,17 +143,9 @@ export class StochasticCalculator {
 	}
 
 	// ストキャスティクスのクロス検出
-	public static detectCross(
-		priceData: PriceData[],
-		kPeriod = 14,
-		dPeriod = 3,
-	): "golden_cross" | "dead_cross" | "none" {
+	public static detectCross(priceData: PriceData[], kPeriod = 14, dPeriod = 3): "golden_cross" | "dead_cross" | "none" {
 		try {
-			const stochArray = StochasticCalculator.calculateArray(
-				priceData,
-				kPeriod,
-				dPeriod,
-			);
+			const stochArray = StochasticCalculator.calculateArray(priceData, kPeriod, dPeriod);
 
 			if (stochArray.k.length < 2 || stochArray.d.length < 2) {
 				return "none";
@@ -202,9 +173,7 @@ export class StochasticCalculator {
 	}
 
 	// オーバーボート・オーバーソールド状態の判定
-	public static getOverboughtOversoldState(
-		result: StochasticResult,
-	): "overbought" | "oversold" | "neutral" {
+	public static getOverboughtOversoldState(result: StochasticResult): "overbought" | "oversold" | "neutral" {
 		const { k, d } = result;
 
 		// 両方が80以上 → 買われすぎ
@@ -228,11 +197,7 @@ export class StochasticCalculator {
 				return "none";
 			}
 
-			const stochArray = StochasticCalculator.calculateArray(
-				priceData,
-				kPeriod,
-				dPeriod,
-			);
+			const stochArray = StochasticCalculator.calculateArray(priceData, kPeriod, dPeriod);
 			const recentPrices = priceData.slice(-lookback).map((d) => d.close);
 			const recentK = stochArray.k.slice(-lookback);
 
@@ -273,11 +238,7 @@ export class StochasticCalculator {
 		dPeriod = 3,
 	): "accelerating" | "decelerating" | "neutral" {
 		try {
-			const stochArray = StochasticCalculator.calculateArray(
-				priceData,
-				kPeriod,
-				dPeriod,
-			);
+			const stochArray = StochasticCalculator.calculateArray(priceData, kPeriod, dPeriod);
 
 			if (stochArray.k.length < 3) return "neutral";
 

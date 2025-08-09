@@ -20,16 +20,10 @@ export class CrossDetectionCalculator {
 		confirmationPeriod = 3,
 	): CrossDetectionResult {
 		if (!Array.isArray(prices) || prices.length === 0) {
-			throw new CalculationError(
-				"Prices array is empty or invalid",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Prices array is empty or invalid", "INVALID_PRICES");
 		}
 
-		if (
-			prices.length <
-			Math.max(longPeriod, shortPeriod) + confirmationPeriod
-		) {
+		if (prices.length < Math.max(longPeriod, shortPeriod) + confirmationPeriod) {
 			throw new CalculationError(
 				`Not enough data points. Need ${Math.max(longPeriod, shortPeriod) + confirmationPeriod}, got ${prices.length}`,
 				"INSUFFICIENT_DATA",
@@ -37,14 +31,8 @@ export class CrossDetectionCalculator {
 		}
 
 		// 移動平均線の計算
-		const shortMAArray = MovingAverageCalculator.calculateArray(
-			prices,
-			shortPeriod,
-		);
-		const longMAArray = MovingAverageCalculator.calculateArray(
-			prices,
-			longPeriod,
-		);
+		const shortMAArray = MovingAverageCalculator.calculateArray(prices, shortPeriod);
+		const longMAArray = MovingAverageCalculator.calculateArray(prices, longPeriod);
 
 		if (shortMAArray.length < 2 || longMAArray.length < 2) {
 			return {
@@ -59,10 +47,8 @@ export class CrossDetectionCalculator {
 
 		// 配列の長さを合わせる
 		const lengthDiff = shortMAArray.length - longMAArray.length;
-		const adjustedShortMA =
-			lengthDiff > 0 ? shortMAArray.slice(lengthDiff) : shortMAArray;
-		const adjustedLongMA =
-			lengthDiff < 0 ? longMAArray.slice(-lengthDiff) : longMAArray;
+		const adjustedShortMA = lengthDiff > 0 ? shortMAArray.slice(lengthDiff) : shortMAArray;
+		const adjustedLongMA = lengthDiff < 0 ? longMAArray.slice(-lengthDiff) : longMAArray;
 
 		// 現在と前回の移動平均値
 		const currentShort = adjustedShortMA[adjustedShortMA.length - 1];
@@ -84,11 +70,7 @@ export class CrossDetectionCalculator {
 		}
 
 		// 強度の判定
-		const strength = CrossDetectionCalculator.calculateCrossStrength(
-			adjustedShortMA,
-			adjustedLongMA,
-			prices,
-		);
+		const strength = CrossDetectionCalculator.calculateCrossStrength(adjustedShortMA, adjustedLongMA, prices);
 
 		// 継続日数の計算
 		const confirmationDays = CrossDetectionCalculator.calculateConfirmationDays(
@@ -120,11 +102,7 @@ export class CrossDetectionCalculator {
 
 		for (const pair of crossPairs) {
 			try {
-				const result = CrossDetectionCalculator.detectCross(
-					prices,
-					pair.short,
-					pair.long,
-				);
+				const result = CrossDetectionCalculator.detectCross(prices, pair.short, pair.long);
 				results.push(result);
 			} catch (error) {
 				// エラーが発生した場合は空の結果を追加
@@ -158,23 +136,13 @@ export class CrossDetectionCalculator {
 
 		// 出来高や価格の変動率も考慮（簡易版）
 		const recentPrices = Calculator.lastN(prices, 5);
-		const volatility =
-			Calculator.standardDeviation(recentPrices) /
-			Calculator.average(recentPrices);
+		const volatility = Calculator.standardDeviation(recentPrices) / Calculator.average(recentPrices);
 
 		// 強度判定ロジック
-		if (
-			Math.abs(shortTrend) > 0.02 &&
-			Math.abs(longTrend) > 0.01 &&
-			volatility > 0.03
-		) {
+		if (Math.abs(shortTrend) > 0.02 && Math.abs(longTrend) > 0.01 && volatility > 0.03) {
 			return "strong";
 		}
-		if (
-			Math.abs(shortTrend) > 0.01 ||
-			Math.abs(longTrend) > 0.005 ||
-			volatility > 0.02
-		) {
+		if (Math.abs(shortTrend) > 0.01 || Math.abs(longTrend) > 0.005 || volatility > 0.02) {
 			return "moderate";
 		}
 
@@ -193,11 +161,7 @@ export class CrossDetectionCalculator {
 	}
 
 	// 継続日数を計算
-	private static calculateConfirmationDays(
-		shortMAArray: number[],
-		longMAArray: number[],
-		maxDays: number,
-	): number {
+	private static calculateConfirmationDays(shortMAArray: number[], longMAArray: number[], maxDays: number): number {
 		let confirmationDays = 0;
 		const minLength = Math.min(shortMAArray.length, longMAArray.length);
 
@@ -258,19 +222,11 @@ export class CrossDetectionCalculator {
 		const { type, strength, confirmationDays } = crossResult;
 
 		// 弱いクロスで確認日数が少ない場合は逆張りチャンス
-		if (
-			type === "dead_cross" &&
-			strength === "weak" &&
-			confirmationDays <= maxConfirmationDays
-		) {
+		if (type === "dead_cross" && strength === "weak" && confirmationDays <= maxConfirmationDays) {
 			return "contrarian_buy";
 		}
 
-		if (
-			type === "golden_cross" &&
-			strength === "weak" &&
-			confirmationDays <= maxConfirmationDays
-		) {
+		if (type === "golden_cross" && strength === "weak" && confirmationDays <= maxConfirmationDays) {
 			return "contrarian_sell";
 		}
 
@@ -295,10 +251,7 @@ export class CrossDetectionCalculator {
 		for (const result of [shortTerm, mediumTerm, longTerm]) {
 			if (result.type === "golden_cross" || result.shortMA > result.longMA) {
 				bullishCount++;
-			} else if (
-				result.type === "dead_cross" ||
-				result.shortMA < result.longMA
-			) {
+			} else if (result.type === "dead_cross" || result.shortMA < result.longMA) {
 				bearishCount++;
 			}
 		}

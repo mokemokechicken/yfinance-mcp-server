@@ -13,10 +13,7 @@ export class ValidationUtils {
 		}
 
 		if (prices.length === 0) {
-			throw new CalculationError(
-				"Prices array cannot be empty",
-				"INVALID_PRICES",
-			);
+			throw new CalculationError("Prices array cannot be empty", "INVALID_PRICES");
 		}
 
 		// 全ての値が有限数であることを確認
@@ -34,21 +31,14 @@ export class ValidationUtils {
 	 */
 	public static validatePeriod(period: number, paramName = "period"): void {
 		if (!Number.isInteger(period) || period <= 0) {
-			throw new CalculationError(
-				`${paramName} must be a positive integer, got: ${period}`,
-				"INVALID_PARAMETER",
-			);
+			throw new CalculationError(`${paramName} must be a positive integer, got: ${period}`, "INVALID_PARAMETER");
 		}
 	}
 
 	/**
 	 * データ長の十分性をチェック
 	 */
-	public static validateDataLength(
-		dataLength: number,
-		requiredLength: number,
-		dataType = "data",
-	): void {
+	public static validateDataLength(dataLength: number, requiredLength: number, dataType = "data"): void {
 		if (dataLength < requiredLength) {
 			throw new CalculationError(
 				`Insufficient ${dataType}: need ${requiredLength}, got ${dataLength}`,
@@ -60,10 +50,7 @@ export class ValidationUtils {
 	/**
 	 * 複数の期間パラメータの関係性バリデーション
 	 */
-	public static validatePeriodRelationship(
-		fastPeriod: number,
-		slowPeriod: number,
-	): void {
+	public static validatePeriodRelationship(fastPeriod: number, slowPeriod: number): void {
 		ValidationUtils.validatePeriod(fastPeriod, "fastPeriod");
 		ValidationUtils.validatePeriod(slowPeriod, "slowPeriod");
 

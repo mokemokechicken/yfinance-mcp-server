@@ -19,25 +19,16 @@ export class MovingAverageCalculator {
 
 	// 表示用の移動平均（丸め処理あり）
 	public static calculateRounded(prices: number[], period: number): number {
-		return Calculator.round(
-			MovingAverageCalculator.calculate(prices, period),
-			3,
-		);
+		return Calculator.round(MovingAverageCalculator.calculate(prices, period), 3);
 	}
 
 	// 複数期間の移動平均を一度に計算
-	public static calculateMultiplePeriods(
-		prices: number[],
-		periods: number[],
-	): { [key: string]: number } {
+	public static calculateMultiplePeriods(prices: number[], periods: number[]): { [key: string]: number } {
 		const result: { [key: string]: number } = {};
 
 		for (const period of periods) {
 			try {
-				result[`ma${period}`] = MovingAverageCalculator.calculate(
-					prices,
-					period,
-				);
+				result[`ma${period}`] = MovingAverageCalculator.calculate(prices, period);
 			} catch (error) {
 				// エラーが発生した期間はNaNを設定
 				result[`ma${period}`] = Number.NaN;
@@ -60,10 +51,7 @@ export class MovingAverageCalculator {
 
 	// 表示用のEMA（丸め処理あり）
 	public static calculateEMARounded(prices: number[], period: number): number {
-		return Calculator.round(
-			MovingAverageCalculator.calculateEMA(prices, period),
-			3,
-		);
+		return Calculator.round(MovingAverageCalculator.calculateEMA(prices, period), 3);
 	}
 
 	// 移動平均の配列を計算（全期間、統一バリデーション）
@@ -81,13 +69,8 @@ export class MovingAverageCalculator {
 	}
 
 	// 表示用の移動平均配列（丸め処理あり）
-	public static calculateArrayRounded(
-		prices: number[],
-		period: number,
-	): number[] {
-		return MovingAverageCalculator.calculateArray(prices, period).map((value) =>
-			Calculator.round(value, 3),
-		);
+	public static calculateArrayRounded(prices: number[], period: number): number[] {
+		return MovingAverageCalculator.calculateArray(prices, period).map((value) => Calculator.round(value, 3));
 	}
 
 	// トレンド判定（移動平均線の傾き）
@@ -123,20 +106,13 @@ export class MovingAverageCalculator {
 	}
 
 	// ゴールデンクロス/デッドクロスの検出
-	public static detectCross(
-		prices: number[],
-		shortPeriod: number,
-		longPeriod: number,
-	): "golden" | "dead" | "none" {
+	public static detectCross(prices: number[], shortPeriod: number, longPeriod: number): "golden" | "dead" | "none" {
 		try {
 			if (prices.length < Math.max(shortPeriod, longPeriod) + 1) {
 				return "none";
 			}
 
-			const shortMA = MovingAverageCalculator.calculateArray(
-				prices,
-				shortPeriod,
-			);
+			const shortMA = MovingAverageCalculator.calculateArray(prices, shortPeriod);
 			const longMA = MovingAverageCalculator.calculateArray(prices, longPeriod);
 
 			if (shortMA.length < 2 || longMA.length < 2) {

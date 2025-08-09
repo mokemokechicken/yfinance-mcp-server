@@ -15,31 +15,16 @@ server.tool(
 	"getStockAnalysis",
 	"包括的な株式分析を実行し、財務指標、テクニカル指標、統合シグナル分析を含む投資分析レポートを提供します。",
 	{
-		symbol: z
-			.string()
-			.describe(
-				"株式銘柄コード（例：米国株=AAPL、日本株=7203.T、仮想通貨=BTC-USD、為替=EURUSD=X）",
-			),
-		days: z
-			.number()
-			.min(1)
-			.max(365)
-			.default(7)
-			.describe("直近何日分の価格推移データを返すか（デフォルト：7日）"),
+		symbol: z.string().describe("株式銘柄コード（例：米国株=AAPL、日本株=7203.T、仮想通貨=BTC-USD、為替=EURUSD=X）"),
+		days: z.number().min(1).max(365).default(7).describe("直近何日分の価格推移データを返すか（デフォルト：7日）"),
 	},
 	async ({ symbol, days = 7 }) => {
 		try {
 			// 包括的分析実行（API呼び出し最小化済み）
-			const analysisResult = await TechnicalAnalyzer.analyzeStockComprehensive(
-				symbol,
-				"1y",
-			);
+			const analysisResult = await TechnicalAnalyzer.analyzeStockComprehensive(symbol, "1y");
 
 			// 日本語レポート生成
-			const report = TechnicalAnalyzer.generateJapaneseReportFromAnalysis(
-				analysisResult,
-				days,
-			);
+			const report = TechnicalAnalyzer.generateJapaneseReportFromAnalysis(analysisResult, days);
 
 			return {
 				content: [
@@ -50,8 +35,7 @@ server.tool(
 				],
 			};
 		} catch (error: unknown) {
-			const errorMessage =
-				error instanceof Error ? error.message : "Unknown error occurred";
+			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 			return {
 				content: [
 					{
