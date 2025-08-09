@@ -90,9 +90,7 @@ export interface ExtendedIndicatorsResult {
 
 	// Phase3 財務拡張指標
 	rsiExtended: import("./financial-indicators/types").RSIExtendedResult;
-	movingAverageDeviations: import(
-		"./financial-indicators/types",
-	).MovingAverageDeviationResult[];
+	movingAverageDeviations: import("./financial-indicators/types").MovingAverageDeviationResult[];
 }
 
 // 包括的分析結果型
