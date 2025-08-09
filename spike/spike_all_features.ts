@@ -256,7 +256,7 @@ async function testAdvancedIndicators(priceData: PriceData[], closePrices: numbe
 }
 
 // Phase3: 財務指標のテスト
-async function testFinancialMetrics(symbol: string, closePrices: number[]) {
+async function testFinancialMetrics(symbol: string, _closePrices: number[]) {
 	console.log("💰 **Phase3: 財務指標**");
 	console.log("-".repeat(50));
 

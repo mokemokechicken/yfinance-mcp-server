@@ -31,7 +31,13 @@ export class FinancialAnalyzer {
 			];
 
 			const quoteSummary = await yahooFinance.quoteSummary(symbol, {
-				modules: modules as any,
+				modules: modules as (
+					| "price"
+					| "summaryDetail"
+					| "defaultKeyStatistics"
+					| "financialData"
+					| "balanceSheetHistory"
+				)[],
 			});
 
 			// 基本情報の取得
@@ -79,7 +85,7 @@ export class FinancialAnalyzer {
 
 			// 自己資本比率（計算）
 			result.equityRatio = FinancialAnalyzer.calculateEquityRatio(
-				quoteSummary as any,
+				quoteSummary,
 			);
 
 			return result;
@@ -94,11 +100,19 @@ export class FinancialAnalyzer {
 	 * 計算式: 総株主資本 / 総資産 × 100
 	 */
 	private static calculateEquityRatio(
-		quoteSummary: QuoteSummaryResult,
+		quoteSummary: unknown,
 	): number | undefined {
 		try {
+			// Type guard for the quoteSummary object
+			if (!quoteSummary || typeof quoteSummary !== "object") {
+				return undefined;
+			}
+
+			// biome-ignore lint/suspicious/noExplicitAny: Yahoo Finance API型が複雑なため
+			const summary = quoteSummary as Record<string, any>;
 			const balanceSheet =
-				quoteSummary.balanceSheetHistory?.balanceSheetStatements?.[0];
+				// biome-ignore lint/suspicious/noExplicitAny: Yahoo Finance API型が複雑なため
+				(summary.balanceSheetHistory as any)?.balanceSheetStatements?.[0];
 
 			if (!balanceSheet?.totalStockholderEquity || !balanceSheet?.totalAssets) {
 				return undefined;
