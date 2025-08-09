@@ -21,9 +21,9 @@ export class StochasticCalculator {
 			);
 		}
 
-		if (priceData.length < kPeriod) {
+		if (priceData.length < kPeriod + dPeriod - 1) {
 			throw new CalculationError(
-				`Not enough data points. Need ${kPeriod}, got ${priceData.length}`,
+				`Not enough data points. Need ${kPeriod + dPeriod - 1}, got ${priceData.length}`,
 				"INSUFFICIENT_DATA",
 			);
 		}
@@ -61,9 +61,9 @@ export class StochasticCalculator {
 			);
 		}
 
-		if (closePrices.length < kPeriod) {
+		if (closePrices.length < kPeriod + dPeriod - 1) {
 			throw new CalculationError(
-				`Not enough data points. Need ${kPeriod}, got ${closePrices.length}`,
+				`Not enough data points. Need ${kPeriod + dPeriod - 1}, got ${closePrices.length}`,
 				"INSUFFICIENT_DATA",
 			);
 		}

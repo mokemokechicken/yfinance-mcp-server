@@ -60,6 +60,10 @@ export class RSICalculator {
 			return 100; // 下落がない場合RSI = 100
 		}
 
+		if (avgGain === 0) {
+			return 0; // 上昇がない場合RSI = 0
+		}
+
 		const rs = avgGain / avgLoss;
 
 		// RSI = 100 - (100 / (1 + RS))（最終結果のみ丸める）
@@ -128,8 +132,12 @@ export class RSICalculator {
 		let avgLoss = Calculator.average(losses.slice(0, period));
 
 		// 最初のRSI値
-		if (avgLoss === 0) {
+		if (avgGain === 0 && avgLoss === 0) {
+			rsiArray.push(50);
+		} else if (avgLoss === 0) {
 			rsiArray.push(100);
+		} else if (avgGain === 0) {
+			rsiArray.push(0);
 		} else {
 			const rs = avgGain / avgLoss;
 			const rsi = 100 - 100 / (1 + rs);
@@ -141,8 +149,12 @@ export class RSICalculator {
 			avgGain = (avgGain * (period - 1) + gains[i]) / period;
 			avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
 
-			if (avgLoss === 0) {
+			if (avgGain === 0 && avgLoss === 0) {
+				rsiArray.push(50);
+			} else if (avgLoss === 0) {
 				rsiArray.push(100);
+			} else if (avgGain === 0) {
+				rsiArray.push(0);
 			} else {
 				const rs = avgGain / avgLoss;
 				const rsi = 100 - 100 / (1 + rs);

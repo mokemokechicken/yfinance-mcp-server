@@ -42,14 +42,15 @@ export class BollingerBandsCalculator {
 		const lower = middle - standardDeviations * stdDev;
 
 		// バンド幅の計算（上部バンド - 下部バンド）
-		const bandwidth = Calculator.round((upper - lower) / middle, 4);
+		const bandwidth =
+			middle > 0 ? Calculator.round((upper - lower) / middle, 4) : 0;
 
 		// %Bの計算（現在価格がバンド内のどの位置にあるか）
 		const currentPrice = prices[prices.length - 1];
-		const percentB = Calculator.round(
-			(currentPrice - lower) / (upper - lower),
-			4,
-		);
+		const percentB =
+			upper > lower
+				? Calculator.round((currentPrice - lower) / (upper - lower), 4)
+				: 0.5; // バンド幅が0の場合は中央値
 
 		return {
 			upper: Calculator.round(upper, 3),
@@ -108,13 +109,17 @@ export class BollingerBandsCalculator {
 			middle.push(Calculator.round(avg, 3));
 			lower.push(Calculator.round(lowerBand, 3));
 
-			const bw = Calculator.round((upperBand - lowerBand) / avg, 4);
+			const bw =
+				avg > 0 ? Calculator.round((upperBand - lowerBand) / avg, 4) : 0;
 			bandwidth.push(bw);
 
-			const pb = Calculator.round(
-				(prices[i] - lowerBand) / (upperBand - lowerBand),
-				4,
-			);
+			const pb =
+				upperBand > lowerBand
+					? Calculator.round(
+							(prices[i] - lowerBand) / (upperBand - lowerBand),
+							4,
+						)
+					: 0.5; // バンド幅が0の場合は中央値
 			percentB.push(pb);
 		}
 

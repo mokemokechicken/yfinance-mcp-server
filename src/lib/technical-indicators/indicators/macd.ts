@@ -9,7 +9,7 @@ export interface MACDResult {
 }
 
 export class MACDCalculator {
-	// MACD計算のメインメソッド（修正版）
+	// MACD計算のメインメソッド（修正版 - 日付合わせ対応）
 	public static calculate(
 		prices: number[],
 		fastPeriod = 12,
@@ -28,16 +28,17 @@ export class MACDCalculator {
 			"price data",
 		);
 
-		// EMA計算（修正版Calculator使用）
+		// EMA計算
 		const fastEMA = Calculator.exponentialMovingAverage(prices, fastPeriod);
 		const slowEMA = Calculator.exponentialMovingAverage(prices, slowPeriod);
 
-		// 同じ日付の値で差分計算（修正版）
-		const alignedLength = Math.min(fastEMA.length, slowEMA.length);
+		// 日付合わせ: slowEMAとfastEMAのオフセット調整
+		const offset = slowPeriod - fastPeriod; // fastの方が早く始まる
 		const macdLine: number[] = [];
 
-		for (let i = 0; i < alignedLength; i++) {
-			macdLine.push(fastEMA[i] - slowEMA[i]); // 同一インデックス = 同一日付
+		// slowEMAの長さに合わせて、対応するfastEMA値と差分を計算
+		for (let i = 0; i < slowEMA.length; i++) {
+			macdLine.push(fastEMA[i + offset] - slowEMA[i]);
 		}
 
 		// シグナル計算
@@ -101,12 +102,13 @@ export class MACDCalculator {
 		const fastEMA = Calculator.exponentialMovingAverage(prices, fastPeriod);
 		const slowEMA = Calculator.exponentialMovingAverage(prices, slowPeriod);
 
-		// 同一日付での差分計算（修正版）
-		const alignedLength = Math.min(fastEMA.length, slowEMA.length);
+		// 日付合わせ: slowEMAとfastEMAのオフセット調整
+		const offset = slowPeriod - fastPeriod;
 		const macdLine: number[] = [];
 
-		for (let i = 0; i < alignedLength; i++) {
-			macdLine.push(fastEMA[i] - slowEMA[i]); // 同一インデックス = 同一日付
+		// slowEMAの長さに合わせて、対応するfastEMA値と差分を計算
+		for (let i = 0; i < slowEMA.length; i++) {
+			macdLine.push(fastEMA[i + offset] - slowEMA[i]);
 		}
 
 		// シグナルライン計算
