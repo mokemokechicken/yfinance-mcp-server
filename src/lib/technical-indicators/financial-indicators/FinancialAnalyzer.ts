@@ -84,9 +84,7 @@ export class FinancialAnalyzer {
 			}
 
 			// 自己資本比率（計算）
-			result.equityRatio = FinancialAnalyzer.calculateEquityRatio(
-				quoteSummary,
-			);
+			result.equityRatio = FinancialAnalyzer.calculateEquityRatio(quoteSummary);
 
 			return result;
 		} catch (error: unknown) {
