@@ -7,13 +7,13 @@ import { TechnicalAnalyzer } from "./lib/technical-indicators/technicalAnalyzer.
 
 const server = new McpServer({
 	name: "alt-yfinance",
-	version: "0.1.0",
+	version: "0.1.0",  // package.jsonのバージョンと一致させる
 });
 
 // AI対応株式分析ツール
 server.tool(
 	"getStockAnalysis",
-	"包括的な株式分析を実行し、財務指標、テクニカル指標、統合シグナル分析を含む投資分析レポートを提供します。",
+	"包括的な株式分析を実行し、財務指標、テクニカル指標、統合シグナル分析を含む投資分析レポートを提供します。(v0.1.0)",  // Toolのバージョンを明示
 	{
 		symbol: z.string().describe("株式銘柄コード（例：米国株=AAPL、日本株=7203.T、仮想通貨=BTC-USD、為替=EURUSD=X）"),
 		days: z.number().min(1).max(365).default(7).describe("直近何日分の価格推移データを返すか（デフォルト：7日）"),
