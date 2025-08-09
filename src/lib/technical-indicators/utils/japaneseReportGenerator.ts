@@ -161,16 +161,16 @@ export function generateJapaneseReport(
 		sections.push(`- PER（予想）: ${fm.forwardPE?.toFixed(2) || "N/A"}`);
 		sections.push(`- PBR: ${fm.priceToBook?.toFixed(2) || "N/A"}`);
 		sections.push(
-			`- ROE: ${fm.returnOnEquity ? fm.returnOnEquity.toFixed(2) + "%" : "N/A"}`,
+			`- ROE: ${fm.returnOnEquity ? `${fm.returnOnEquity.toFixed(2)}%` : "N/A"}`,
 		);
 		sections.push(
-			`- EPS成長率: ${fm.earningsGrowth ? (fm.earningsGrowth * 100).toFixed(2) + "%" : "N/A"}`,
+			`- EPS成長率: ${fm.earningsGrowth ? `${(fm.earningsGrowth * 100).toFixed(2)}%` : "N/A"}`,
 		);
 		sections.push(
-			`- 配当利回り: ${fm.dividendYield ? fm.dividendYield.toFixed(2) + "%" : "N/A"}`,
+			`- 配当利回り: ${fm.dividendYield ? `${fm.dividendYield.toFixed(2)}%` : "N/A"}`,
 		);
 		sections.push(
-			`- 自己資本比率: ${fm.equityRatio ? fm.equityRatio.toFixed(1) + "%" : "N/A"}`,
+			`- 自己資本比率: ${fm.equityRatio ? `${fm.equityRatio.toFixed(1)}%` : "N/A"}`,
 		);
 	}
 
@@ -211,12 +211,12 @@ export function generateJapaneseReport(
 	// 移動平均乖離率
 	sections.push("");
 	sections.push("**移動平均乖離率:**");
-	analysis.extendedIndicators.movingAverageDeviations.forEach((dev) => {
+	for (const dev of analysis.extendedIndicators.movingAverageDeviations) {
 		const sign = dev.deviation >= 0 ? "+" : "";
 		sections.push(
 			`- ${dev.period}日MA乖離: ${sign}${dev.deviation.toFixed(2)}% (MA: ${formatCurrency(dev.movingAverage)})`,
 		);
-	});
+	}
 
 	// MACD
 	sections.push("");
