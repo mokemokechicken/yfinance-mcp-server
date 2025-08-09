@@ -1,5 +1,5 @@
 {
-	"name": "@onori/yfinance-mcp-server",
+	"name": "@mokemokechicken/yfinance-mcp-server",
 	"version": "0.0.3",
 	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
 	"main": "build/index.js",
@@ -12,7 +12,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/onori/yfinance-mcp-server.git"
+		"url": "git+https://github.com/mokemokechicken/yfinance-mcp-server.git"
 	},
 	"keywords": [
 		"yahoo-finance",
@@ -21,7 +21,7 @@
 		"finance",
 		"stock"
 	],
-	"author": "onori",
+	"author": "mokemokechicken",
 	"license": "ISC",
 	"type": "module",
 	"files": [
