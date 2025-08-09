@@ -35,8 +35,15 @@ async function testAllTechnicalIndicators() {
 		console.log("📊 コマツ(6301.T)の実データ分析...");
 		const startTime = Date.now();
 		
-		const priceData = await TechnicalAnalyzer.fetchData("6301.T", "1y");
+		const priceData = await TechnicalAnalyzer.fetchData("6301.T", "14d");
 		const closePrices = priceData.map(d => d.close);
+		
+		console.log("\n📊 直近14日のRawデータ:");
+		console.log("Date\t\tOpen\tHigh\tLow\tClose\tVolume");
+		console.log("-".repeat(80));
+		priceData.forEach(data => {
+			console.log(`${data.date.toLocaleDateString("ja-JP")}\t${data.open.toFixed(2)}\t${data.high.toFixed(2)}\t${data.low.toFixed(2)}\t${data.close.toFixed(2)}\t${data.volume.toLocaleString()}`);
+		});
 		
 		const dataTime = Date.now();
 		console.log(`✅ データ取得完了 (${priceData.length}日分) - ${dataTime - startTime}ms\n`);
