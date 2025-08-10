@@ -1,8 +1,8 @@
 import type {
+	ParameterValidationResult,
+	ParameterWarning,
 	TechnicalParametersConfig,
 	ValidatedTechnicalParameters,
-	ParameterWarning,
-	ParameterValidationResult,
 } from "../types";
 
 // デフォルト設定値
@@ -60,9 +60,7 @@ export class ParameterValidator {
 	/**
 	 * パラメータ検証とデフォルト値設定のメインメソッド
 	 */
-	public static validateAndSetDefaults(
-		params?: TechnicalParametersConfig,
-	): ParameterValidationResult {
+	public static validateAndSetDefaults(params?: TechnicalParametersConfig): ParameterValidationResult {
 		if (!params) {
 			return {
 				validatedParams: DEFAULT_TECHNICAL_PARAMETERS,
@@ -72,9 +70,7 @@ export class ParameterValidator {
 		}
 
 		const warnings: ParameterWarning[] = [];
-		const validatedParams: ValidatedTechnicalParameters = JSON.parse(
-			JSON.stringify(DEFAULT_TECHNICAL_PARAMETERS),
-		);
+		const validatedParams: ValidatedTechnicalParameters = JSON.parse(JSON.stringify(DEFAULT_TECHNICAL_PARAMETERS));
 		let hasCustomSettings = false;
 
 		// 移動平均線パラメータの検証

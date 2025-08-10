@@ -9,21 +9,21 @@ import { RSICalculator } from "./indicators/rsi";
 import { StochasticCalculator } from "./indicators/stochastic";
 import { VolumeAnalysisCalculator } from "./indicators/volumeAnalysis";
 import { VWAPCalculator } from "./indicators/vwap";
-import { ParameterValidator, DEFAULT_TECHNICAL_PARAMETERS } from "./utils/parameterValidator";
 import {
 	type ComprehensiveStockAnalysisResult,
 	DataFetchError,
 	type ExtendedIndicatorsResult,
-	type TechnicalParametersConfig,
-	type ValidatedTechnicalParameters,
 	type IndicatorConfig,
 	type PriceData,
 	type StockAnalysisResult,
 	type TechnicalIndicators,
+	type TechnicalParametersConfig,
+	type ValidatedTechnicalParameters,
 } from "./types";
 import { Calculator } from "./utils/calculator";
 import { DataProcessor } from "./utils/dataProcessor";
 import { generateJapaneseReport } from "./utils/japaneseReportGenerator";
+import { DEFAULT_TECHNICAL_PARAMETERS, ParameterValidator } from "./utils/parameterValidator";
 
 // デフォルト設定
 const DEFAULT_CONFIG: IndicatorConfig = {
@@ -382,13 +382,19 @@ export class TechnicalAnalyzer {
 
 		// Phase2: 拡張指標計算（カスタムパラメータ使用 + Graceful Degradation）
 		const bollingerBands = safeCalculate(
-			() => BollingerBandsCalculator.calculate(closePrices, params.bollingerBands.period, params.bollingerBands.standardDeviations),
+			() =>
+				BollingerBandsCalculator.calculate(
+					closePrices,
+					params.bollingerBands.period,
+					params.bollingerBands.standardDeviations,
+				),
 			() => ({ upper: 0, middle: 0, lower: 0, bandwidth: 0, percentB: 0 }),
 			"ボリンジャーバンド",
 		);
 
 		const stochastic = safeCalculate(
-			() => StochasticCalculator.calculateWithOHLC(this.priceData, params.stochastic.kPeriod, params.stochastic.dPeriod),
+			() =>
+				StochasticCalculator.calculateWithOHLC(this.priceData, params.stochastic.kPeriod, params.stochastic.dPeriod),
 			() => ({ k: 0, d: 0 }),
 			"ストキャスティクス",
 		);
@@ -441,10 +447,11 @@ export class TechnicalAnalyzer {
 
 		// Phase3: 財務拡張指標（Graceful Degradation）
 		const rsiExtended = safeCalculate(
-			() => RSICalculator.calculateExtended(closePrices, {
-				overbought: params.rsi.overbought,
-				oversold: params.rsi.oversold,
-			}),
+			() =>
+				RSICalculator.calculateExtended(closePrices, {
+					overbought: params.rsi.overbought,
+					oversold: params.rsi.oversold,
+				}),
 			() => ({
 				rsi14: 0,
 				rsi21: 0,

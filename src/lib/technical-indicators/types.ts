@@ -94,39 +94,39 @@ export interface IndicatorConfig {
 // 技術指標パラメータ設定用インターフェース（MCP Tool用）
 export interface TechnicalParametersConfig {
 	movingAverages?: {
-		periods?: number[];            // デフォルト[25, 50, 200]
+		periods?: number[]; // デフォルト[25, 50, 200]
 	};
 	rsi?: {
-		periods?: number[];            // デフォルト[14, 21]
-		overbought?: number;           // デフォルト70
-		oversold?: number;             // デフォルト30
+		periods?: number[]; // デフォルト[14, 21]
+		overbought?: number; // デフォルト70
+		oversold?: number; // デフォルト30
 	};
 	macd?: {
-		fastPeriod?: number;           // デフォルト12
-		slowPeriod?: number;           // デフォルト26
-		signalPeriod?: number;         // デフォルト9
+		fastPeriod?: number; // デフォルト12
+		slowPeriod?: number; // デフォルト26
+		signalPeriod?: number; // デフォルト9
 	};
 	bollingerBands?: {
-		period?: number;               // デフォルト20
-		standardDeviations?: number;   // デフォルト2
+		period?: number; // デフォルト20
+		standardDeviations?: number; // デフォルト2
 	};
 	stochastic?: {
-		kPeriod?: number;              // デフォルト14
-		dPeriod?: number;              // デフォルト3
-		overbought?: number;           // デフォルト80
-		oversold?: number;             // デフォルト20
+		kPeriod?: number; // デフォルト14
+		dPeriod?: number; // デフォルト3
+		overbought?: number; // デフォルト80
+		oversold?: number; // デフォルト20
 	};
 	volumeAnalysis?: {
-		period?: number;               // デフォルト20
-		spikeThreshold?: number;       // デフォルト2.0
+		period?: number; // デフォルト20
+		spikeThreshold?: number; // デフォルト2.0
 	};
 	vwap?: {
-		enableTrueVWAP?: boolean;      // デフォルトtrue（15分足ベース）
-		standardDeviations?: number;   // デフォルト1
+		enableTrueVWAP?: boolean; // デフォルトtrue（15分足ベース）
+		standardDeviations?: number; // デフォルト1
 	};
 	mvwap?: {
-		period?: number;               // デフォルト20（移動期間）
-		standardDeviations?: number;   // デフォルト1
+		period?: number; // デフォルト20（移動期間）
+		standardDeviations?: number; // デフォルト1
 	};
 }
 
@@ -186,19 +186,19 @@ export interface ParameterValidationResult {
 
 // VWAP拡張結果（真のVWAPと移動VWAP）
 export interface VWAPAnalysisResult {
-	trueDailyVWAP?: VWAPResult;       // 15分足ベースの真の1日VWAP
-	movingVWAP: VWAPResult;           // 従来の移動VWAP
-	recommendedVWAP: 'daily' | 'moving'; // 推奨指標
+	trueDailyVWAP?: VWAPResult; // 15分足ベースの真の1日VWAP
+	movingVWAP: VWAPResult; // 従来の移動VWAP
+	recommendedVWAP: "daily" | "moving"; // 推奨指標
 	dataSource: {
-		daily?: '15min' | 'unavailable';
-		moving: 'daily';
+		daily?: "15min" | "unavailable";
+		moving: "daily";
 	};
 }
 
 // MCP Tool引数の拡張型
 export interface StockAnalysisRequest {
-	symbol: string;                    // 既存（必須）
-	days?: number;                     // 既存（オプション、デフォルト7）
+	symbol: string; // 既存（必須）
+	days?: number; // 既存（オプション、デフォルト7）
 	technicalParams?: TechnicalParametersConfig; // 新規追加
 }
 
@@ -223,7 +223,7 @@ export interface ParameterizedExtendedIndicatorsResult {
 	stochastic: StochasticResult & { config: { kPeriod: number; dPeriod: number; overbought: number; oversold: number } };
 	crossDetection: CrossDetectionResult;
 	volumeAnalysis: VolumeAnalysisResult & { config: { period: number; spikeThreshold: number } };
-	vwap: VWAPAnalysisResult;         // 拡張版VWAP
+	vwap: VWAPAnalysisResult; // 拡張版VWAP
 
 	// Phase3 財務拡張指標（設定情報付き）
 	rsiExtended: RSIExtendedResult & { config: { periods: number[]; overbought: number; oversold: number } };

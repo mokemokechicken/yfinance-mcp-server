@@ -1,7 +1,4 @@
-import type {
-	TechnicalParametersConfig,
-	ValidatedTechnicalParameters,
-} from "../types";
+import type { TechnicalParametersConfig, ValidatedTechnicalParameters } from "../types";
 import { DEFAULT_TECHNICAL_PARAMETERS } from "./parameterValidator";
 
 // 設定サマリー情報
