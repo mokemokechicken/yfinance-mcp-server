@@ -53,9 +53,6 @@ export type {
 	ValidatedTechnicalParameters,
 	ParameterValidationResult,
 	ParameterWarning,
-	ConfigSummary,
-	ConfigSection,
-	ConfigParameter,
 } from "./types";
 
 // エラークラスエクスポート

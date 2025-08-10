@@ -23,7 +23,9 @@ import {
 	type TechnicalIndicators,
 	type TechnicalParametersConfig,
 	type ValidatedTechnicalParameters,
+	type VWAPAnalysisResult,
 } from "./types";
+import type { FinancialMetricsResult } from "./financial-indicators/types";
 import { Calculator } from "./utils/calculator";
 import { DataProcessor } from "./utils/dataProcessor";
 import { ErrorHandler } from "./utils/errorHandler";
@@ -384,7 +386,7 @@ export class TechnicalAnalyzer {
 		dataFetchPromises.push(priceDataPromise);
 
 		// 財務メトリクス取得（Promise 2）- 並列実行
-		let financialMetricsPromise: Promise<unknown> = Promise.resolve(null);
+		let financialMetricsPromise: Promise<FinancialMetricsResult | null> = Promise.resolve(null);
 		if (includeFinancials) {
 			financialMetricsPromise = FinancialAnalyzer.getFinancialMetrics(symbol).catch((error) => {
 				const errorReport = ErrorHandler.handleError(
@@ -399,10 +401,10 @@ export class TechnicalAnalyzer {
 		dataFetchPromises.push(financialMetricsPromise);
 
 		// 並列実行と結果取得
-		const [priceData, financialMetrics] = await Promise.all(dataFetchPromises);
+		const [priceData, financialMetrics] = await Promise.all(dataFetchPromises) as [PriceData[], FinancialMetricsResult | null];
 
 		// 基本分析実行
-		const analyzer = new TechnicalAnalyzer(priceData as PriceData[]);
+		const analyzer = new TechnicalAnalyzer(priceData);
 		let baseResult: StockAnalysisResult;
 
 		try {
@@ -415,7 +417,7 @@ export class TechnicalAnalyzer {
 			baseResult = {
 				symbol,
 				companyName: symbol,
-				period: `${(priceData as PriceData[]).length} days`,
+				period: `${priceData.length} days`,
 				lastUpdated: new Date().toISOString(),
 				priceData: { current: 0, change: 0, changePercent: 0 },
 				technicalIndicators: {
@@ -438,7 +440,7 @@ export class TechnicalAnalyzer {
 			...baseResult,
 			financialMetrics,
 			extendedIndicators,
-			priceHistoryData: priceData as PriceData[],
+			priceHistoryData: priceData,
 		};
 
 		return { result, errorReports };
@@ -529,7 +531,7 @@ export class TechnicalAnalyzer {
 		);
 
 		// VWAP計算（外部API呼び出しを含むため非同期）
-		let vwap: unknown;
+		let vwap: VWAPAnalysisResult;
 		try {
 			const config = {
 				enableTrueVWAP: params.vwap.enableTrueVWAP,
