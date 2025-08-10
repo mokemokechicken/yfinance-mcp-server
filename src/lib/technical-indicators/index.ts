@@ -45,6 +45,19 @@ export { Calculator } from "./utils/calculator";
 export { DataProcessor } from "./utils/dataProcessor";
 export { ValidationUtils } from "./utils/validation";
 
+// パラメータ化機能エクスポート（Phase4）
+export { ConfigManager } from "./utils/configManager";
+export { ParameterValidator } from "./utils/parameterValidator";
+export type {
+	TechnicalParametersConfig,
+	ValidatedTechnicalParameters,
+	ParameterValidationResult,
+	ParameterWarning,
+	ConfigSummary,
+	ConfigSection,
+	ConfigParameter,
+} from "./types";
+
 // エラークラスエクスポート
 export {
 	TechnicalIndicatorError,

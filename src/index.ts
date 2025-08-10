@@ -3,7 +3,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import yahooFinance from "yahoo-finance2";
 import { TechnicalAnalyzer } from "./lib/technical-indicators/technicalAnalyzer.js";
+
+// Yahoo Finance APIの通知メッセージを抑制
+yahooFinance.suppressNotices(['yahooSurvey']);
 
 const server = new McpServer({
 	name: "alt-yfinance",

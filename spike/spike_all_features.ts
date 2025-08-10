@@ -18,6 +18,10 @@ import {
 	FinancialAnalyzer,
 	MovingAverageDeviationCalculator,
 	
+	// Phase4 パラメータ化機能
+	ConfigManager,
+	ParameterValidator,
+	
 	// 型定義
 	type StockAnalysisResult,
 	type BollingerBandsResult,
@@ -29,6 +33,10 @@ import {
 	type FinancialMetricsResult,
 	type MovingAverageDeviationResult,
 	type RSIExtendedResult,
+	type TechnicalParametersConfig,
+	type ValidatedTechnicalParameters,
+	type ParameterValidationResult,
+	type ConfigSummary,
 } from "../src/lib/technical-indicators";
 
 // 統合テクニカル指標テスト
@@ -65,6 +73,9 @@ async function testAllTechnicalIndicators(symbol?: string) {
 
 		// === Phase3: 財務指標 ===
 		await testFinancialMetrics(stockSymbol, closePrices);
+
+		// === Phase4: パラメータ化機能 ===
+		await testParameterizationFeatures();
 
 		// === 統合分析結果 ===
 		await testIntegratedAnalysis(stockSymbol);
@@ -285,6 +296,113 @@ async function testFinancialMetrics(symbol: string, _closePrices: number[]) {
 
 	} catch (error: any) {
 		console.log(`  ❌ 財務指標取得エラー: ${error.message}`);
+	}
+
+	console.log();
+}
+
+// Phase4: パラメータ化機能のテスト
+async function testParameterizationFeatures() {
+	console.log("⚙️ **Phase4: パラメータ化機能**");
+	console.log("-".repeat(50));
+
+	// デフォルトパラメータの表示
+	console.log("🔹 デフォルト設定:");
+	try {
+		const defaultValidation: ParameterValidationResult = ParameterValidator.validateAndSetDefaults();
+		const defaultConfig: ValidatedTechnicalParameters = defaultValidation.validatedParams;
+		
+		console.log(`  移動平均線: [${defaultConfig.movingAverages.periods.join(", ")}]日`);
+		console.log(`  RSI: 期間[${defaultConfig.rsi.periods.join(", ")}]日, 買われすぎ${defaultConfig.rsi.overbought}, 売られすぎ${defaultConfig.rsi.oversold}`);
+		console.log(`  MACD: 短期${defaultConfig.macd.fastPeriod}日, 長期${defaultConfig.macd.slowPeriod}日, シグナル${defaultConfig.macd.signalPeriod}日`);
+		console.log(`  ボリンジャーバンド: 期間${defaultConfig.bollingerBands.period}日, 標準偏差±${defaultConfig.bollingerBands.standardDeviations}σ`);
+		console.log(`  ストキャスティクス: %K=${defaultConfig.stochastic.kPeriod}日, %D=${defaultConfig.stochastic.dPeriod}日, 買われすぎ${defaultConfig.stochastic.overbought}, 売られすぎ${defaultConfig.stochastic.oversold}`);
+		console.log(`  出来高分析: 期間${defaultConfig.volumeAnalysis.period}日, 急増閾値${defaultConfig.volumeAnalysis.spikeThreshold}倍`);
+		console.log(`  VWAP: 真の1日VWAP=${defaultConfig.vwap.enableTrueVWAP ? "有効" : "無効"}, 標準偏差±${defaultConfig.vwap.standardDeviations}σ`);
+	} catch (error: any) {
+		console.log(`  ❌ デフォルト設定取得エラー: ${error.message}`);
+	}
+
+	// カスタムパラメータのテスト
+	console.log("\n🔹 カスタム設定テスト:");
+	try {
+		const customParams: TechnicalParametersConfig = {
+			movingAverages: { periods: [10, 30, 100] },
+			rsi: { periods: [9, 25], overbought: 75, oversold: 25 },
+			macd: { fastPeriod: 8, slowPeriod: 21, signalPeriod: 7 },
+			bollingerBands: { period: 15, standardDeviations: 2.5 },
+			stochastic: { kPeriod: 21, dPeriod: 5, overbought: 85, oversold: 15 },
+			volumeAnalysis: { period: 30, spikeThreshold: 3.0 },
+			vwap: { enableTrueVWAP: false, standardDeviations: 1.5 },
+		};
+
+		const customValidation: ParameterValidationResult = ParameterValidator.validateAndSetDefaults(customParams);
+		const validatedConfig: ValidatedTechnicalParameters = customValidation.validatedParams;
+
+		console.log(`  カスタム設定検証: ${customValidation.hasCustomSettings ? "✅ カスタム設定あり" : "⚠️ デフォルト設定"}`);
+		console.log(`  警告数: ${customValidation.warnings.length}件`);
+
+		if (customValidation.warnings.length > 0) {
+			console.log("  ⚠️ 検証警告:");
+			customValidation.warnings.forEach((warning) => {
+				console.log(`    - ${warning.parameter}: ${warning.originalValue} → ${warning.correctedValue} (${warning.reason})`);
+			});
+		}
+
+		console.log("\n  🔧 適用後のカスタム設定:");
+		console.log(`  移動平均線: [${validatedConfig.movingAverages.periods.join(", ")}]日`);
+		console.log(`  RSI: 期間[${validatedConfig.rsi.periods.join(", ")}]日, 買われすぎ${validatedConfig.rsi.overbought}, 売られすぎ${validatedConfig.rsi.oversold}`);
+		console.log(`  MACD: 短期${validatedConfig.macd.fastPeriod}日, 長期${validatedConfig.macd.slowPeriod}日, シグナル${validatedConfig.macd.signalPeriod}日`);
+		console.log(`  ボリンジャーバンド: 期間${validatedConfig.bollingerBands.period}日, 標準偏差±${validatedConfig.bollingerBands.standardDeviations}σ`);
+		console.log(`  ストキャスティクス: %K=${validatedConfig.stochastic.kPeriod}日, %D=${validatedConfig.stochastic.dPeriod}日, 買われすぎ${validatedConfig.stochastic.overbought}, 売られすぎ${validatedConfig.stochastic.oversold}`);
+		console.log(`  出来高分析: 期間${validatedConfig.volumeAnalysis.period}日, 急増閾値${validatedConfig.volumeAnalysis.spikeThreshold}倍`);
+		console.log(`  VWAP: 真の1日VWAP=${validatedConfig.vwap.enableTrueVWAP ? "有効" : "無効"}, 標準偏差±${validatedConfig.vwap.standardDeviations}σ`);
+
+		// 設定サマリーの生成テスト
+		console.log("\n🔹 設定サマリー:");
+		const configSummary: ConfigSummary = ConfigManager.generateConfigSummary(validatedConfig, customParams);
+		console.log(`  カスタマイゼーション: ${configSummary.hasCustomizations ? "✅ あり" : "❌ なし"}`);
+		console.log(`  総カスタムパラメータ数: ${configSummary.totalCustomParameters}個`);
+		
+		configSummary.sections.forEach((section) => {
+			const status = section.isCustomized ? "🔧" : "⚙️";
+			const display = ConfigManager.generateConfigDisplayString(section);
+			console.log(`  ${status} ${display}`);
+		});
+
+	} catch (error: any) {
+		console.log(`  ❌ カスタム設定テストエラー: ${error.message}`);
+	}
+
+	// 不正パラメータのテスト
+	console.log("\n🔹 不正パラメータ検証テスト:");
+	try {
+		const invalidParams: TechnicalParametersConfig = {
+			movingAverages: { periods: [-5, 500, 0] },
+			rsi: { periods: [0, 150], overbought: 50, oversold: 80 }, // 逆転した値
+			macd: { fastPeriod: 30, slowPeriod: 10, signalPeriod: 100 }, // fast > slowの不正な設定
+			bollingerBands: { period: -1, standardDeviations: 10 },
+			stochastic: { kPeriod: 200, dPeriod: -3, overbought: 40, oversold: 90 }, // 逆転した値
+			volumeAnalysis: { period: 0, spikeThreshold: -1.5 },
+			vwap: { enableTrueVWAP: true, standardDeviations: 0 },
+		};
+
+		const invalidValidation: ParameterValidationResult = ParameterValidator.validateAndSetDefaults(invalidParams);
+		console.log(`  不正パラメータ検証: 警告数${invalidValidation.warnings.length}件`);
+		
+		if (invalidValidation.warnings.length > 0) {
+			console.log("  🚫 検出された問題:");
+			invalidValidation.warnings.slice(0, 8).forEach((warning) => { // 最大8件まで表示
+				console.log(`    - ${warning.parameter}: ${JSON.stringify(warning.originalValue)} → ${JSON.stringify(warning.correctedValue)}`);
+				console.log(`      理由: ${warning.reason}`);
+			});
+			if (invalidValidation.warnings.length > 8) {
+				console.log(`    ... 他${invalidValidation.warnings.length - 8}件の警告`);
+			}
+		}
+
+	} catch (error: any) {
+		console.log(`  ❌ 不正パラメータテストエラー: ${error.message}`);
 	}
 
 	console.log();
@@ -536,6 +654,13 @@ function displayFeatureSummary() {
 	console.log("  📈 RSI拡張 (14日・21日比較分析)");
 	console.log("  🔍 Yahoo Finance API統合");
 	
+	console.log("\n**Phase4 パラメータ化機能:**");
+	console.log("  ⚙️ テクニカル指標パラメータのカスタマイズ");
+	console.log("  🔧 設定値の検証とバリデーション");
+	console.log("  📋 デフォルト値との統合管理");
+	console.log("  🛡️ 不正値の自動補正機能");
+	console.log("  📊 設定サマリーと可視化");
+	
 	console.log("\n**統合機能:**");
 	console.log("  🎯 総合的な売買シグナル判定");
 	console.log("  📊 トレンド・モメンタム・強度分析");
@@ -583,6 +708,7 @@ export {
 	testAllTechnicalIndicators,
 	testBasicIndicators,
 	testAdvancedIndicators,
+	testParameterizationFeatures,
 	testIntegratedAnalysis,
 	testWithDummyData,
 };
