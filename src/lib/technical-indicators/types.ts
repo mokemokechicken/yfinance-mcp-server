@@ -9,6 +9,33 @@ import type { CrossDetectionResult } from "./indicators/crossDetection";
 import type { StochasticResult } from "./indicators/stochastic";
 import type { VolumeAnalysisResult } from "./indicators/volumeAnalysis";
 import type { VWAPResult } from "./indicators/vwap";
+// VWAPAnalysisResult の型定義（ハイブリッドVWAP）
+export interface VWAPAnalysisResult {
+	trueDailyVWAP?: {
+		vwap: number;
+		upperBand: number;
+		lowerBand: number;
+		deviation: number;
+		position: "above" | "below" | "at";
+		strength: "strong" | "moderate" | "weak";
+		trend: "bullish" | "bearish" | "neutral";
+		dataSource: "15min" | "unavailable";
+		dataQuality: "high" | "medium" | "low";
+		dataPoints: number;
+		calculationDate: string;
+	};
+	movingVWAP: VWAPResult & { config: { period: number; sigma: number } };
+	recommendedVWAP: "daily" | "moving" | "both";
+	dataSource: {
+		daily?: "15min" | "unavailable";
+		moving: "daily";
+	};
+	analysis: {
+		convergence?: "converging" | "diverging" | "aligned";
+		reliability: "high" | "medium" | "low";
+		tradingSignal: "bullish" | "bearish" | "neutral";
+	};
+}
 
 // 価格データの型
 export interface PriceData {
@@ -184,16 +211,7 @@ export interface ParameterValidationResult {
 	hasCustomSettings: boolean;
 }
 
-// VWAP拡張結果（真のVWAPと移動VWAP）
-export interface VWAPAnalysisResult {
-	trueDailyVWAP?: VWAPResult; // 15分足ベースの真の1日VWAP
-	movingVWAP: VWAPResult; // 従来の移動VWAP
-	recommendedVWAP: "daily" | "moving"; // 推奨指標
-	dataSource: {
-		daily?: "15min" | "unavailable";
-		moving: "daily";
-	};
-}
+// 古い定義は上記の新しい定義に統合済み
 
 // MCP Tool引数の拡張型
 export interface StockAnalysisRequest {
@@ -209,26 +227,14 @@ export interface ExtendedIndicatorsResult {
 	stochastic: StochasticResult;
 	crossDetection: CrossDetectionResult;
 	volumeAnalysis: VolumeAnalysisResult;
-	vwap: VWAPResult;
+	vwap: VWAPAnalysisResult; // ハイブリッドVWAP結果に更新
 
 	// Phase3 財務拡張指標
 	rsiExtended: RSIExtendedResult;
 	movingAverageDeviations: MovingAverageDeviationResult[];
 }
 
-// パラメータ化対応版の拡張指標結果型（将来用）
-export interface ParameterizedExtendedIndicatorsResult {
-	// Phase2 拡張指標（設定情報付き）
-	bollingerBands: BollingerBandsResult & { config: { period: number; sigma: number } };
-	stochastic: StochasticResult & { config: { kPeriod: number; dPeriod: number; overbought: number; oversold: number } };
-	crossDetection: CrossDetectionResult;
-	volumeAnalysis: VolumeAnalysisResult & { config: { period: number; spikeThreshold: number } };
-	vwap: VWAPAnalysisResult; // 拡張版VWAP
-
-	// Phase3 財務拡張指標（設定情報付き）
-	rsiExtended: RSIExtendedResult & { config: { periods: number[]; overbought: number; oversold: number } };
-	movingAverageDeviations: (MovingAverageDeviationResult & { period: number })[];
-}
+// パラメータ化対応版の拡張指標結果型は ExtendedIndicatorsResult に統合済み
 
 // 包括的分析結果型
 export interface ComprehensiveStockAnalysisResult extends StockAnalysisResult {

@@ -9,6 +9,7 @@ import { RSICalculator } from "./indicators/rsi";
 import { StochasticCalculator } from "./indicators/stochastic";
 import { VolumeAnalysisCalculator } from "./indicators/volumeAnalysis";
 import { VWAPCalculator } from "./indicators/vwap";
+import { HybridVWAPCalculator } from "./indicators/hybridVwap";
 import {
 	type ComprehensiveStockAnalysisResult,
 	DataFetchError,
@@ -354,7 +355,7 @@ export class TechnicalAnalyzer {
 		const baseResult = analyzer.analyze(symbol);
 
 		// 拡張指標計算（パラメータ付き）
-		const extendedIndicators = analyzer.calculateExtendedIndicators(validationResult.validatedParams);
+		const extendedIndicators = await analyzer.calculateExtendedIndicators(symbol, validationResult.validatedParams);
 
 		return {
 			...baseResult,
@@ -365,7 +366,7 @@ export class TechnicalAnalyzer {
 	}
 
 	// 新規：拡張指標計算メソッド（Graceful Degradation対応）
-	public calculateExtendedIndicators(customParams?: ValidatedTechnicalParameters): ExtendedIndicatorsResult {
+	public async calculateExtendedIndicators(symbol: string, customParams?: ValidatedTechnicalParameters): Promise<ExtendedIndicatorsResult> {
 		// パラメータ設定（カスタム設定またはデフォルト値）
 		const params = customParams || DEFAULT_TECHNICAL_PARAMETERS;
 		const closePrices = DataProcessor.extractClosePrices(this.priceData);
@@ -374,6 +375,20 @@ export class TechnicalAnalyzer {
 		const safeCalculate = <T>(calculationFn: () => T, fallbackFn: () => T, indicatorName: string): T => {
 			try {
 				return calculationFn();
+			} catch (error) {
+				console.warn(`${indicatorName} calculation failed:`, error);
+				return fallbackFn();
+			}
+		};
+
+		// 非同期版safeCalculate
+		const safeCalculateAsync = async <T>(
+			calculationFn: () => Promise<T>, 
+			fallbackFn: () => T, 
+			indicatorName: string
+		): Promise<T> => {
+			try {
+				return await calculationFn();
 			} catch (error) {
 				console.warn(`${indicatorName} calculation failed:`, error);
 				return fallbackFn();
@@ -431,18 +446,37 @@ export class TechnicalAnalyzer {
 			"出来高分析",
 		);
 
-		const vwap = safeCalculate(
-			() => VWAPCalculator.calculate(this.priceData, params.vwap.standardDeviations),
+		const vwap = await safeCalculateAsync(
+			async () => {
+				const config = {
+					enableTrueVWAP: params.vwap.enableTrueVWAP,
+					standardDeviations: params.vwap.standardDeviations,
+					mvwap: {
+						period: params.mvwap.period,
+						standardDeviations: params.mvwap.standardDeviations,
+					},
+				};
+				return await HybridVWAPCalculator.calculateHybridVWAP(symbol, this.priceData, config);
+			},
 			() => ({
-				vwap: 0,
-				upperBand: 0,
-				lowerBand: 0,
-				deviation: 0,
-				position: "at" as const,
-				strength: "weak" as const,
-				trend: "neutral" as const,
+				movingVWAP: {
+					vwap: 0,
+					upperBand: 0,
+					lowerBand: 0,
+					deviation: 0,
+					position: "at" as const,
+					strength: "weak" as const,
+					trend: "neutral" as const,
+					config: { period: params.mvwap.period, sigma: params.mvwap.standardDeviations },
+				},
+				recommendedVWAP: "moving" as const,
+				dataSource: { moving: "daily" as const },
+				analysis: {
+					reliability: "low" as const,
+					tradingSignal: "neutral" as const,
+				},
 			}),
-			"VWAP",
+			"ハイブリッドVWAP",
 		);
 
 		// Phase3: 財務拡張指標（Graceful Degradation）

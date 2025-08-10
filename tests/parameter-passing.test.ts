@@ -99,7 +99,7 @@ describe("パラメータ渡し機能のテスト", () => {
 	});
 
 	describe("拡張指標計算のパラメータ伝播", () => {
-		it("calculateExtendedIndicatorsがパラメータを受け取る", () => {
+		it("calculateExtendedIndicatorsがパラメータを受け取る", async () => {
 			// TechnicalAnalyzerインスタンスを作成してメソッドの存在を確認
 			const mockPriceData = [
 				{
@@ -117,7 +117,7 @@ describe("パラメータ渡し機能のテスト", () => {
 			assert.strictEqual(methodExists, true);
 
 			// デフォルト呼び出し（パラメータなし）
-			const result1 = analyzer.calculateExtendedIndicators();
+			const result1 = await analyzer.calculateExtendedIndicators("AAPL");
 			assert.ok(result1);
 			assert.ok("bollingerBands" in result1);
 			assert.ok("stochastic" in result1);
@@ -135,7 +135,7 @@ describe("パラメータ渡し機能のテスト", () => {
 				mvwap: { period: 25, standardDeviations: 1.5 },
 			};
 
-			const result2 = analyzer.calculateExtendedIndicators(customParams);
+			const result2 = await analyzer.calculateExtendedIndicators("AAPL", customParams);
 			assert.ok(result2);
 			assert.ok("bollingerBands" in result2);
 			assert.ok("stochastic" in result2);
@@ -144,13 +144,13 @@ describe("パラメータ渡し機能のテスト", () => {
 	});
 
 	describe("エラーハンドリング", () => {
-		it("Graceful Degradationの動作", () => {
+		it("Graceful Degradationの動作", async () => {
 			// データ不足の場合でもエラーで止まらず、フォールバック値を返すことを検証
 			const emptyData: any[] = [];
 			const analyzer = new TechnicalAnalyzer(emptyData);
 
 			// エラーが発生しても関数は完了し、結果オブジェクトが返される
-			const result = analyzer.calculateExtendedIndicators();
+			const result = await analyzer.calculateExtendedIndicators("AAPL");
 			assert.ok(result);
 			assert.ok("bollingerBands" in result);
 			assert.ok("stochastic" in result);
@@ -159,7 +159,7 @@ describe("パラメータ渡し機能のテスト", () => {
 			// フォールバック値が設定されている
 			assert.strictEqual(result.bollingerBands.upper, 0);
 			assert.strictEqual(result.stochastic.k, 0);
-			assert.strictEqual(result.vwap.vwap, 0);
+			assert.strictEqual(result.vwap.movingVWAP.vwap, 0);
 		});
 	});
 });
