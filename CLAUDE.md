@@ -18,6 +18,16 @@ This is an unofficial Yahoo Finance API MCP (Model Context Protocol) server that
 - `npm run test:individual` - Run individual test files with tsx --test
 - `npm install` - Install dependencies
 
+### Make Commands
+- `make build` - Build the project
+- `make test` - Run tests
+- `make lint` - Run linter
+- `make check` - Run format/lint checks
+- `make typecheck` - Run TypeScript type checking
+- `make check-all` - Run all checks (build, test, lint, check, typecheck)
+- `make prepare` - Run all checks and prepare for publishing (npm pack --dry-run)
+- `make publish` - Build, test, lint, and publish to npm
+
 ## Project Architecture
 - **Entry Point**: `src/index.ts` contains the MCP server implementation with the main `getStockAnalysis` tool
 - **Technical Indicators Library**: `src/lib/technical-indicators/` contains a comprehensive technical analysis system:
