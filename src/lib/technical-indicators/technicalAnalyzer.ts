@@ -9,10 +9,13 @@ import { RSICalculator } from "./indicators/rsi";
 import { StochasticCalculator } from "./indicators/stochastic";
 import { VolumeAnalysisCalculator } from "./indicators/volumeAnalysis";
 import { VWAPCalculator } from "./indicators/vwap";
+import { ParameterValidator, DEFAULT_TECHNICAL_PARAMETERS } from "./utils/parameterValidator";
 import {
 	type ComprehensiveStockAnalysisResult,
 	DataFetchError,
 	type ExtendedIndicatorsResult,
+	type TechnicalParametersConfig,
+	type ValidatedTechnicalParameters,
 	type IndicatorConfig,
 	type PriceData,
 	type StockAnalysisResult,
@@ -335,7 +338,11 @@ export class TechnicalAnalyzer {
 		symbol: string,
 		period = "1y",
 		includeFinancials = true,
+		technicalParams?: TechnicalParametersConfig,
 	): Promise<ComprehensiveStockAnalysisResult> {
+		// パラメータ検証とデフォルト値設定
+		const validationResult = ParameterValidator.validateAndSetDefaults(technicalParams);
+
 		// API呼び出し最小化：並列取得
 		const [priceData, financialMetrics] = await Promise.all([
 			TechnicalAnalyzer.fetchData(symbol, period),
@@ -346,8 +353,8 @@ export class TechnicalAnalyzer {
 		const analyzer = new TechnicalAnalyzer(priceData);
 		const baseResult = analyzer.analyze(symbol);
 
-		// 拡張指標計算
-		const extendedIndicators = analyzer.calculateExtendedIndicators();
+		// 拡張指標計算（パラメータ付き）
+		const extendedIndicators = analyzer.calculateExtendedIndicators(validationResult.validatedParams);
 
 		return {
 			...baseResult,
@@ -358,7 +365,9 @@ export class TechnicalAnalyzer {
 	}
 
 	// 新規：拡張指標計算メソッド（Graceful Degradation対応）
-	public calculateExtendedIndicators(): ExtendedIndicatorsResult {
+	public calculateExtendedIndicators(customParams?: ValidatedTechnicalParameters): ExtendedIndicatorsResult {
+		// パラメータ設定（カスタム設定またはデフォルト値）
+		const params = customParams || DEFAULT_TECHNICAL_PARAMETERS;
 		const closePrices = DataProcessor.extractClosePrices(this.priceData);
 
 		// 各指標を安全に計算（エラーが発生しても他の指標は継続）
@@ -371,21 +380,27 @@ export class TechnicalAnalyzer {
 			}
 		};
 
-		// Phase2: 拡張指標計算（Graceful Degradation）
+		// Phase2: 拡張指標計算（カスタムパラメータ使用 + Graceful Degradation）
 		const bollingerBands = safeCalculate(
-			() => BollingerBandsCalculator.calculate(closePrices, 20, 2),
+			() => BollingerBandsCalculator.calculate(closePrices, params.bollingerBands.period, params.bollingerBands.standardDeviations),
 			() => ({ upper: 0, middle: 0, lower: 0, bandwidth: 0, percentB: 0 }),
 			"ボリンジャーバンド",
 		);
 
 		const stochastic = safeCalculate(
-			() => StochasticCalculator.calculateWithOHLC(this.priceData, 14, 3),
+			() => StochasticCalculator.calculateWithOHLC(this.priceData, params.stochastic.kPeriod, params.stochastic.dPeriod),
 			() => ({ k: 0, d: 0 }),
 			"ストキャスティクス",
 		);
 
 		const crossDetection = safeCalculate(
-			() => CrossDetectionCalculator.detectCross(closePrices, 25, 50, 3),
+			() => {
+				// 移動平均期間の最初の2つを使用（最低2つは保証されている）
+				const periods = params.movingAverages.periods;
+				const shortPeriod = periods[0] || 25;
+				const longPeriod = periods[1] || 50;
+				return CrossDetectionCalculator.detectCross(closePrices, shortPeriod, longPeriod, 3);
+			},
 			() => ({
 				type: "none" as const,
 				shortMA: 0,
@@ -398,7 +413,7 @@ export class TechnicalAnalyzer {
 		);
 
 		const volumeAnalysis = safeCalculate(
-			() => VolumeAnalysisCalculator.calculate(this.priceData, 20),
+			() => VolumeAnalysisCalculator.calculate(this.priceData, params.volumeAnalysis.period),
 			() => ({
 				averageVolume: 0,
 				relativeVolume: 0,
@@ -411,7 +426,7 @@ export class TechnicalAnalyzer {
 		);
 
 		const vwap = safeCalculate(
-			() => VWAPCalculator.calculate(this.priceData, 1),
+			() => VWAPCalculator.calculate(this.priceData, params.vwap.standardDeviations),
 			() => ({
 				vwap: 0,
 				upperBand: 0,
@@ -426,7 +441,10 @@ export class TechnicalAnalyzer {
 
 		// Phase3: 財務拡張指標（Graceful Degradation）
 		const rsiExtended = safeCalculate(
-			() => RSICalculator.calculateExtended(closePrices),
+			() => RSICalculator.calculateExtended(closePrices, {
+				overbought: params.rsi.overbought,
+				oversold: params.rsi.oversold,
+			}),
 			() => ({
 				rsi14: 0,
 				rsi21: 0,
