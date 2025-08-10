@@ -116,7 +116,6 @@ export class ConfigManager {
 			}
 		}
 
-
 		return merged;
 	}
 
@@ -164,7 +163,6 @@ export class ConfigManager {
 		const vwapSection = ConfigManager.createVWAPSection(validatedConfig, userParams);
 		sections.push(vwapSection);
 		totalCustomParameters += vwapSection.parameters.filter((p) => p.isCustom).length;
-
 
 		const hasCustomizations = totalCustomParameters > 0;
 

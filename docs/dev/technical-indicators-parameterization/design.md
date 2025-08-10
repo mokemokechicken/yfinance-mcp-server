@@ -334,50 +334,9 @@ export interface ParameterWarning {
 3. **API制限**: キャッシュデータ利用、制限情報表示
 4. **VWAP計算失敗**: 移動VWAPのみ表示、理由説明
 
-## 6. パフォーマンス設計
+## 6. テスト設計
 
-### 6.1 キャッシュ戦略
-
-#### データキャッシュ設計
-```typescript
-export class DataCacheManager {
-  // 15分足データキャッシュ (1時間TTL)
-  private static intraday15MinCache: Map<string, CachedData>;
-  
-  // 日足データキャッシュ (15分TTL) 
-  private static dailyDataCache: Map<string, CachedData>;
-  
-  // 設定別計算結果キャッシュ (30分TTL)
-  private static calculationCache: Map<string, CachedResult>;
-}
-```
-
-#### キャッシュキー設計
-```
-Format: "{symbol}_{dataType}_{period}_{hash(params)}"
-Example: "AAPL_15min_60d_a1b2c3"
-```
-
-### 6.2 API呼び出し最適化
-
-#### 並列処理設計
-```typescript
-// 並列データ取得
-const [dailyData, intradayData, financialData] = await Promise.all([
-  TechnicalAnalyzer.fetchData(symbol, period),           // 既存
-  TrueVWAPCalculator.fetch15MinData(symbol, new Date()), // 新規
-  FinancialAnalyzer.getFinancialMetrics(symbol)          // 既存
-]);
-```
-
-#### レート制限対応
-- 15分足API呼び出しは1日1回まで (キャッシュ活用)
-- 並列処理での同時接続数制限
-- エラー時の指数バックオフ実装
-
-## 7. テスト設計
-
-### 7.1 テストケース分類
+### 6.1 テストケース分類
 
 #### 単体テスト
 1. **パラメータ検証**: ParameterValidator の各メソッド
@@ -398,14 +357,14 @@ const [dailyData, intradayData, financialData] = await Promise.all([
 2. **エラーシナリオ**: 各種エラー状況でのGraceful Degradation
 3. **パフォーマンス**: 応答時間とメモリ使用量
 
-### 7.2 テストデータ設計
+### 6.2 テストデータ設計
 - **モックデータ**: API応答の模擬データ  
 - **エッジケース**: 極端なパラメータ値
 - **リアルデータ**: 実際のシンボルでの統合テスト
 
-### 7.3 パラメータ渡しテストの詳細設計
+### 6.3 パラメータ渡しテストの詳細設計
 
-#### 7.3.1 テスト対象メソッド
+#### 6.3.1 テスト対象メソッド
 ```typescript
 // 現在のシグネチャ
 TechnicalAnalyzer.analyzeStockComprehensive(
@@ -423,7 +382,7 @@ TechnicalAnalyzer.analyzeStockComprehensive(
 )
 ```
 
-#### 7.3.2 テストシナリオ
+#### 6.3.2 テストシナリオ
 ```typescript
 // 1. 基本パラメータ渡しテスト
 const customParams = {
@@ -450,16 +409,16 @@ const invalidParams = {
 await analyzeStockComprehensive("AAPL"); // 既存の呼び出し方法
 ```
 
-#### 7.3.3 検証ポイント
+#### 6.3.3 検証ポイント
 1. **引数の受け取り**: メソッドが4番目の引数を正しく受け取る
 2. **パラメータの伝播**: 各指標計算メソッドにカスタム値が渡される
 3. **デフォルト値の適用**: 未指定項目はデフォルト値が使用される
 4. **エラーハンドリング**: 無効値は警告付きでデフォルト値に修正される
 5. **結果への反映**: 出力に設定した期間・閾値が正しく表示される
 
-## 8. 移行戦略
+## 7. 移行戦略
 
-### 8.1 段階的リリース計画
+### 7.1 段階的リリース計画
 
 #### Phase 1: 基本パラメータ化 (MVP)
 - 移動平均、RSI、MACD、ボリンジャーバンドの期間設定
@@ -473,48 +432,22 @@ await analyzeStockComprehensive("AAPL"); // 既存の呼び出し方法
 
 #### Phase 3: 高度な機能
 - 全パラメータのカスタマイズ対応
-- キャッシュ機能強化
-- パフォーマンス最適化
 
-### 8.2 下位互換性保証
+### 7.2 下位互換性保証
 - 既存のAPI呼び出しは無変更で動作
 - デフォルト値による従来と同等の出力
 - エラー時のフォールバック機能
 
-## 9. セキュリティ考慮事項
+## 8. セキュリティ考慮事項
 
-### 9.1 入力検証
+### 8.1 入力検証
 - パラメータ値の範囲チェック
 - SQLインジェクション対策 (該当する場合)
 - 不正な配列サイズの制限
 
-### 9.2 レート制限対応
+### 8.2 レート制限対応
 - API呼び出し頻度の監視
 - 異常なトラフィック検出
 - Graceful Degradation による可用性確保
-
-## 10. 運用・保守設計
-
-### 10.1 ログ設計
-```typescript
-// パラメータ使用状況のログ
-interface ParameterUsageLog {
-  timestamp: string;
-  symbol: string;
-  customParameters: TechnicalParametersConfig;
-  performanceMetrics: {
-    calculationTime: number;
-    apiCalls: number;
-    cacheHits: number;
-  };
-}
-```
-
-### 10.2 監視ポイント
-- API呼び出し成功率
-- VWAP計算成功率  
-- 応答時間分布
-- キャッシュヒット率
-- エラー発生頻度
 
 これらの設計により、技術指標パラメータ化機能を安全かつ効率的に実装できます。

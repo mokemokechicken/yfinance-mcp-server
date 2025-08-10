@@ -9,7 +9,7 @@
 	"scripts": {
 		"dev": "tsx --watch ./src/index.ts",
 		"build": "esbuild src/index.ts --minify --bundle --platform=node --format=esm --outfile=build/index.js",
-		"test": "find tests -name '*.test.ts' -exec npx tsx --test --test-reporter dot {} + 2>/dev/null",
+		"test": "npx tsx --test --test-reporter dot tests",
 		"test:verbose": "find tests -name '*.test.ts' -exec npx tsx --test --test-reporter spec {} +",
 		"test:silent": "find tests -name '*.test.ts' -exec npx tsx --test --test-reporter dot {} + 2>&1 | grep -v 'calculation failed' || echo 'Tests completed'",
 		"test:individual": "npx tsx --test",

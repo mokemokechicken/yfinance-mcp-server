@@ -51,7 +51,6 @@
 | error-handling | エラーハンドリング強化 | Graceful Degradation拡張 | 各種エラー時のフォールバック動作 |
 | param-passing-tests | パラメータ渡しテスト | 単体テストスイート | メソッドシグネチャ、伝播、デフォルト値テスト |
 | integration-tests | 統合テスト実装 | エンドツーエンドテスト | Tool呼び出しから出力まで全フロー |
-| performance-optimization | パフォーマンス最適化 | キャッシュ機能、並列処理最適化 | 計算時間10%以内増加、API呼び出し最適化 |
 
 ### Phase 4: 品質保証とリリース準備
 
@@ -75,7 +74,7 @@ analyzer-extension → indicator-param-support → output-format-basic
                                                           ↓
                                error-handling → param-passing-tests → integration-tests
                                                           ↓
-                               performance-optimization → backward-compatibility
+                               backward-compatibility
                                                           ↓
                                documentation-update → build-test-lint → manual-testing
 ```
@@ -94,22 +93,19 @@ analyzer-extension → indicator-param-support → output-format-basic
 - mcp-tool-extension
 - param-passing-tests
 
-### 低優先度 (追加機能・最適化)
+### 低優先度 (追加機能)
 - true-vwap-calc
 - hybrid-vwap
 - intraday-api
 - vwap-output
-- performance-optimization
 
 ## 成功基準
 1. **機能面**: 全指標のパラメータカスタマイズが動作する
 2. **品質面**: 既存テスト + 新規テスト全通過
-3. **性能面**: 計算時間増加10%以内
-4. **互換性**: 既存API呼び出しが無変更で動作
+3. **互換性**: 既存API呼び出しが無変更で動作
 
 ## リスク管理
 - **技術リスク**: 15分足API制限 → Graceful Degradation実装
-- **パフォーマンスリスク**: 計算量増加 → キャッシュ・並列処理最適化  
 - **互換性リスク**: 既存機能破綻 → 段階的実装・テスト強化
 
 ---
@@ -142,7 +138,6 @@ analyzer-extension → indicator-param-support → output-format-basic
 - [completed]: error-handling - エラーハンドリング強化（ErrorHandlerクラス、Graceful Degradation拡張完了）
 - [completed]: param-passing-tests - 統合パラメータ渡しテスト（包括的テストスイート実装完了）
 - [completed]: integration-tests - 統合テスト実装（エンドツーエンドテスト完全実装）
-- [completed]: performance-optimization - パフォーマンス最適化（キャッシュ、並列処理、監視システム実装完了）
 - [completed]: backward-compatibility - 下位互換性確認（全API動作確認済み）
 - [completed]: build-test-lint - ビルド・テスト・リント確認（主要品質チェック完了）
 

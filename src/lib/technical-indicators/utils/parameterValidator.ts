@@ -312,7 +312,6 @@ export class ParameterValidator {
 			}
 		}
 
-
 		return {
 			validatedParams,
 			warnings,
