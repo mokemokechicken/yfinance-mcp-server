@@ -1,6 +1,7 @@
 import yahooFinance from "yahoo-finance2";
 import { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
 import { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
+import type { FinancialMetricsResult } from "./financial-indicators/types";
 import { BollingerBandsCalculator } from "./indicators/bollingerBands";
 import { CrossDetectionCalculator } from "./indicators/crossDetection";
 import { HybridVWAPCalculator } from "./indicators/hybridVwap";
@@ -22,10 +23,9 @@ import {
 	type StockAnalysisResult,
 	type TechnicalIndicators,
 	type TechnicalParametersConfig,
-	type ValidatedTechnicalParameters,
 	type VWAPAnalysisResult,
+	type ValidatedTechnicalParameters,
 } from "./types";
-import type { FinancialMetricsResult } from "./financial-indicators/types";
 import { Calculator } from "./utils/calculator";
 import { DataProcessor } from "./utils/dataProcessor";
 import { ErrorHandler } from "./utils/errorHandler";
@@ -401,7 +401,10 @@ export class TechnicalAnalyzer {
 		dataFetchPromises.push(financialMetricsPromise);
 
 		// 並列実行と結果取得
-		const [priceData, financialMetrics] = await Promise.all(dataFetchPromises) as [PriceData[], FinancialMetricsResult | null];
+		const [priceData, financialMetrics] = (await Promise.all(dataFetchPromises)) as [
+			PriceData[],
+			FinancialMetricsResult | null,
+		];
 
 		// 基本分析実行
 		const analyzer = new TechnicalAnalyzer(priceData);
