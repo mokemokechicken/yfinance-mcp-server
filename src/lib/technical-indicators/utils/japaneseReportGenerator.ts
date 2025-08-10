@@ -3,7 +3,8 @@
  * spike_all_features.ts のgetJapaneseSignal機能を活用
  */
 
-import type { ComprehensiveStockAnalysisResult, PriceData } from "../types";
+import type { ComprehensiveStockAnalysisResult, PriceData, ValidatedTechnicalParameters, TechnicalParametersConfig } from "../types";
+import { ConfigManager } from "./configManager";
 
 // シグナルの日本語変換（spike_all_features.tsから移植）
 function getJapaneseSignal(type: string, signal: string): string {
@@ -153,7 +154,12 @@ function generatePriceHistoryTable(priceData: PriceData[], days: number): string
 }
 
 // 日本語レポート生成
-export function generateJapaneseReport(analysis: ComprehensiveStockAnalysisResult, days: number): string {
+export function generateJapaneseReport(
+	analysis: ComprehensiveStockAnalysisResult, 
+	days: number,
+	validatedParams?: ValidatedTechnicalParameters,
+	userParams?: TechnicalParametersConfig
+): string {
 	const sections: string[] = [];
 
 	// 基本情報
@@ -189,33 +195,65 @@ export function generateJapaneseReport(analysis: ComprehensiveStockAnalysisResul
 		sections.push(`- 自己資本比率: ${fm.equityRatio ? `${fm.equityRatio.toFixed(1)}%` : "N/A"}`);
 	}
 
+	// カスタム設定情報（設定されている場合のみ表示）
+	if (validatedParams && userParams) {
+		const configSummary = ConfigManager.generateConfigSummary(validatedParams, userParams);
+		if (configSummary.hasCustomizations) {
+			sections.push("");
+			sections.push("### ⚙️ カスタム設定");
+			sections.push(`カスタマイズされた設定: ${configSummary.totalCustomParameters}項目`);
+			sections.push("");
+		}
+	}
+
 	// テクニカル指標
 	sections.push("");
 	sections.push("### テクニカル指標");
 	sections.push("");
 
-	// 移動平均線
-	sections.push("**移動平均線:**");
+	// 移動平均線（改善版）
 	const ma = analysis.technicalIndicators.movingAverages;
 	const currentPrice = analysis.priceData.current;
+	const maPeriods = validatedParams?.movingAverages?.periods || [25, 50, 200];
+	const isMACustom = userParams?.movingAverages?.periods !== undefined;
 
-	sections.push(
-		`- 25日線: ${ma.ma25 ? formatCurrency(ma.ma25) : "N/A"} (現在価格との関係: ${ma.ma25 && currentPrice > ma.ma25 ? "上位" : "下位"})`,
-	);
-	sections.push(
-		`- 50日線: ${ma.ma50 ? formatCurrency(ma.ma50) : "N/A"} (現在価格との関係: ${ma.ma50 && currentPrice > ma.ma50 ? "上位" : "下位"})`,
-	);
-	sections.push(
-		`- 200日線: ${ma.ma200 ? formatCurrency(ma.ma200) : "N/A"} (現在価格との関係: ${ma.ma200 && currentPrice > ma.ma200 ? "上位" : "下位"})`,
-	);
-	sections.push(`- トレンド判定: ${getJapaneseSignal("trend", analysis.signals.trend)}`);
-
-	// RSI拡張版
+	sections.push(isMACustom ? "**📊 移動平均線（カスタム設定）**" : "**📊 移動平均線**");
+	
+	// 動的な移動平均線表示
+	const maValues = [ma.ma25, ma.ma50, ma.ma200];
+	maPeriods.forEach((period, index) => {
+		const value = maValues[index];
+		const label = period <= 30 ? "短期" : period <= 100 ? "中期" : "長期";
+		const position = value && currentPrice > value ? "📈" : value && currentPrice < value ? "📉" : "➡️";
+		const relation = value && currentPrice > value ? "上位" : value && currentPrice < value ? "下位" : "同水準";
+		
+		sections.push(`├─ ${label}(${period}日): ${value ? formatCurrency(value) : "N/A"} ${position} (${relation})`);
+	});
+	sections.push(`└─ トレンド判定: ${getJapaneseSignal("trend", analysis.signals.trend)}`);
 	sections.push("");
-	sections.push("**RSI (相対力指数):**");
+
+	// RSI拡張版（改善版）
 	const rsiExt = analysis.extendedIndicators.rsiExtended;
-	sections.push(`- 14日RSI: ${rsiExt.rsi14.toFixed(2)} (${getJapaneseSignal("rsi_signal", rsiExt.signal14)})`);
-	sections.push(`- 21日RSI: ${rsiExt.rsi21.toFixed(2)} (${getJapaneseSignal("rsi_signal", rsiExt.signal21)})`);
+	const rsiPeriods = validatedParams?.rsi?.periods || [14, 21];
+	const isRSICustom = userParams?.rsi !== undefined;
+	
+	sections.push(isRSICustom ? "**📈 RSI（カスタム設定）**" : "**📈 RSI**");
+	rsiPeriods.forEach((period, index) => {
+		const value = index === 0 ? rsiExt.rsi14 : rsiExt.rsi21;
+		const signal = index === 0 ? rsiExt.signal14 : rsiExt.signal21;
+		const overbought = validatedParams?.rsi?.overbought || 70;
+		const oversold = validatedParams?.rsi?.oversold || 30;
+		
+		let status = "⚡中立圏";
+		if (value > overbought) status = "⚠️買われすぎ圏";
+		else if (value < oversold) status = "🔵売られすぎ圏";
+		
+		sections.push(`├─ RSI(${period}日): ${value.toFixed(2)} ${status}`);
+	});
+	if (isRSICustom) {
+		sections.push(`└─ 閾値: 買われすぎ>${validatedParams?.rsi?.overbought || 70}, 売られすぎ<${validatedParams?.rsi?.oversold || 30}`);
+	}
+	sections.push("");
 
 	// 移動平均乖離率
 	sections.push("");
@@ -227,27 +265,38 @@ export function generateJapaneseReport(analysis: ComprehensiveStockAnalysisResul
 		);
 	}
 
-	// MACD
-	sections.push("");
-	sections.push("**MACD:**");
+	// MACD（改善版）
 	const macd = analysis.technicalIndicators.macd;
-	sections.push(`- MACD: ${macd.macd.toFixed(3)}`);
-	sections.push(`- シグナル: ${macd.signal.toFixed(3)}`);
-	sections.push(`- ヒストグラム: ${macd.histogram.toFixed(3)}`);
-
-	// ボリンジャーバンド
+	const isMACDCustom = userParams?.macd !== undefined;
+	const fastPeriod = validatedParams?.macd?.fastPeriod || 12;
+	const slowPeriod = validatedParams?.macd?.slowPeriod || 26;
+	const signalPeriod = validatedParams?.macd?.signalPeriod || 9;
+	
+	sections.push(isMACDCustom ? "**📊 MACD（カスタム設定）**" : "**📊 MACD**");
+	sections.push(`├─ 設定: MACD(${fastPeriod},${slowPeriod},${signalPeriod})`);
+	sections.push(`├─ MACD: ${macd.macd.toFixed(3)}`);
+	sections.push(`├─ シグナル: ${macd.signal.toFixed(3)}`);
+	sections.push(`└─ ヒストグラム: ${macd.histogram.toFixed(3)}`);
 	sections.push("");
-	sections.push("**ボリンジャーバンド:**");
+
+	// ボリンジャーバンド（改善版）
 	const bb = analysis.extendedIndicators.bollingerBands;
+	const isBBCustom = userParams?.bollingerBands !== undefined;
+	const bbPeriod = validatedParams?.bollingerBands?.period || 20;
+	const bbSigma = validatedParams?.bollingerBands?.standardDeviations || 2;
+	
+	sections.push(isBBCustom ? "**📈 ボリンジャーバンド（カスタム設定）**" : "**📈 ボリンジャーバンド**");
 	if (bb.upper > 0 && bb.middle > 0 && bb.lower > 0) {
-		sections.push(`- 上部バンド: ${formatCurrency(bb.upper)}`);
-		sections.push(`- 中央線: ${formatCurrency(bb.middle)}`);
-		sections.push(`- 下部バンド: ${formatCurrency(bb.lower)}`);
-		sections.push(`- バンド幅: ${(bb.bandwidth * 100).toFixed(2)}%`);
-		sections.push(`- %B: ${(bb.percentB * 100).toFixed(1)}%`);
+		sections.push(`├─ 設定: 期間${bbPeriod}日, ±${bbSigma}σ`);
+		sections.push(`├─ 上部バンド: ${formatCurrency(bb.upper)}`);
+		sections.push(`├─ 中央線(${bbPeriod}日MA): ${formatCurrency(bb.middle)}`);
+		sections.push(`├─ 下部バンド: ${formatCurrency(bb.lower)}`);
+		sections.push(`├─ バンド幅: ${(bb.bandwidth * 100).toFixed(2)}%`);
+		sections.push(`└─ %B: ${(bb.percentB * 100).toFixed(1)}%`);
 	} else {
-		sections.push("- データ不足のため計算できませんでした");
+		sections.push("└─ データ不足のため計算できませんでした");
 	}
+	sections.push("");
 
 	// ストキャスティクス
 	sections.push("");

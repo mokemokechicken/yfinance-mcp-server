@@ -483,7 +483,12 @@ export class TechnicalAnalyzer {
 	}
 
 	// 新規：日本語レポート生成メソッド
-	public static generateJapaneseReportFromAnalysis(analysis: ComprehensiveStockAnalysisResult, days: number): string {
-		return generateJapaneseReport(analysis, days);
+	public static generateJapaneseReportFromAnalysis(
+		analysis: ComprehensiveStockAnalysisResult, 
+		days: number,
+		validatedParams?: ValidatedTechnicalParameters,
+		userParams?: TechnicalParametersConfig
+	): string {
+		return generateJapaneseReport(analysis, days, validatedParams, userParams);
 	}
 }
