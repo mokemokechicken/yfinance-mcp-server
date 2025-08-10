@@ -3,7 +3,12 @@
  * spike_all_features.ts のgetJapaneseSignal機能を活用
  */
 
-import type { ComprehensiveStockAnalysisResult, PriceData, ValidatedTechnicalParameters, TechnicalParametersConfig } from "../types";
+import type {
+	ComprehensiveStockAnalysisResult,
+	PriceData,
+	TechnicalParametersConfig,
+	ValidatedTechnicalParameters,
+} from "../types";
 import { ConfigManager } from "./configManager";
 
 // シグナルの日本語変換（spike_all_features.tsから移植）
@@ -155,10 +160,10 @@ function generatePriceHistoryTable(priceData: PriceData[], days: number): string
 
 // 日本語レポート生成
 export function generateJapaneseReport(
-	analysis: ComprehensiveStockAnalysisResult, 
+	analysis: ComprehensiveStockAnalysisResult,
 	days: number,
 	validatedParams?: ValidatedTechnicalParameters,
-	userParams?: TechnicalParametersConfig
+	userParams?: TechnicalParametersConfig,
 ): string {
 	const sections: string[] = [];
 
@@ -218,7 +223,7 @@ export function generateJapaneseReport(
 	const isMACustom = userParams?.movingAverages?.periods !== undefined;
 
 	sections.push(isMACustom ? "**📊 移動平均線（カスタム設定）**" : "**📊 移動平均線**");
-	
+
 	// 動的な移動平均線表示
 	const maValues = [ma.ma25, ma.ma50, ma.ma200];
 	maPeriods.forEach((period, index) => {
@@ -226,7 +231,7 @@ export function generateJapaneseReport(
 		const label = period <= 30 ? "短期" : period <= 100 ? "中期" : "長期";
 		const position = value && currentPrice > value ? "📈" : value && currentPrice < value ? "📉" : "➡️";
 		const relation = value && currentPrice > value ? "上位" : value && currentPrice < value ? "下位" : "同水準";
-		
+
 		sections.push(`├─ ${label}(${period}日): ${value ? formatCurrency(value) : "N/A"} ${position} (${relation})`);
 	});
 	sections.push(`└─ トレンド判定: ${getJapaneseSignal("trend", analysis.signals.trend)}`);
@@ -236,22 +241,24 @@ export function generateJapaneseReport(
 	const rsiExt = analysis.extendedIndicators.rsiExtended;
 	const rsiPeriods = validatedParams?.rsi?.periods || [14, 21];
 	const isRSICustom = userParams?.rsi !== undefined;
-	
+
 	sections.push(isRSICustom ? "**📈 RSI（カスタム設定）**" : "**📈 RSI**");
 	rsiPeriods.forEach((period, index) => {
 		const value = index === 0 ? rsiExt.rsi14 : rsiExt.rsi21;
 		const signal = index === 0 ? rsiExt.signal14 : rsiExt.signal21;
 		const overbought = validatedParams?.rsi?.overbought || 70;
 		const oversold = validatedParams?.rsi?.oversold || 30;
-		
+
 		let status = "⚡中立圏";
 		if (value > overbought) status = "⚠️買われすぎ圏";
 		else if (value < oversold) status = "🔵売られすぎ圏";
-		
+
 		sections.push(`├─ RSI(${period}日): ${value.toFixed(2)} ${status}`);
 	});
 	if (isRSICustom) {
-		sections.push(`└─ 閾値: 買われすぎ>${validatedParams?.rsi?.overbought || 70}, 売られすぎ<${validatedParams?.rsi?.oversold || 30}`);
+		sections.push(
+			`└─ 閾値: 買われすぎ>${validatedParams?.rsi?.overbought || 70}, 売られすぎ<${validatedParams?.rsi?.oversold || 30}`,
+		);
 	}
 	sections.push("");
 
@@ -271,7 +278,7 @@ export function generateJapaneseReport(
 	const fastPeriod = validatedParams?.macd?.fastPeriod || 12;
 	const slowPeriod = validatedParams?.macd?.slowPeriod || 26;
 	const signalPeriod = validatedParams?.macd?.signalPeriod || 9;
-	
+
 	sections.push(isMACDCustom ? "**📊 MACD（カスタム設定）**" : "**📊 MACD**");
 	sections.push(`├─ 設定: MACD(${fastPeriod},${slowPeriod},${signalPeriod})`);
 	sections.push(`├─ MACD: ${macd.macd.toFixed(3)}`);
@@ -284,7 +291,7 @@ export function generateJapaneseReport(
 	const isBBCustom = userParams?.bollingerBands !== undefined;
 	const bbPeriod = validatedParams?.bollingerBands?.period || 20;
 	const bbSigma = validatedParams?.bollingerBands?.standardDeviations || 2;
-	
+
 	sections.push(isBBCustom ? "**📈 ボリンジャーバンド（カスタム設定）**" : "**📈 ボリンジャーバンド**");
 	if (bb.upper > 0 && bb.middle > 0 && bb.lower > 0) {
 		sections.push(`├─ 設定: 期間${bbPeriod}日, ±${bbSigma}σ`);
@@ -330,7 +337,7 @@ export function generateJapaneseReport(
 	sections.push("");
 	sections.push("**VWAP分析 (出来高加重平均価格):**");
 	const vwapAnalysis = analysis.extendedIndicators.vwap;
-	
+
 	// 真の1日VWAP（利用可能な場合）
 	if (vwapAnalysis.trueDailyVWAP) {
 		sections.push("");
@@ -339,12 +346,14 @@ export function generateJapaneseReport(
 		sections.push(`- VWAP: ${formatCurrency(dailyVwap.vwap)} ✨`);
 		sections.push(`- 上部バンド(+1σ): ${formatCurrency(dailyVwap.upperBand)}`);
 		sections.push(`- 下部バンド(-1σ): ${formatCurrency(dailyVwap.lowerBand)}`);
-		sections.push(`- データ品質: ${dailyVwap.dataQuality === 'high' ? '🟢 高' : dailyVwap.dataQuality === 'medium' ? '🟡 中' : '🔴 低'} (${dailyVwap.dataPoints}ポイント)`);
+		sections.push(
+			`- データ品質: ${dailyVwap.dataQuality === "high" ? "🟢 高" : dailyVwap.dataQuality === "medium" ? "🟡 中" : "🔴 低"} (${dailyVwap.dataPoints}ポイント)`,
+		);
 		sections.push(`- 価格位置: ${getJapaneseSignal("position", dailyVwap.position)}`);
 		sections.push(`- シグナル強度: ${getJapaneseSignal("strength", dailyVwap.strength)}`);
 		sections.push(`- トレンド: ${getJapaneseSignal("trend", dailyVwap.trend)}`);
 	}
-	
+
 	// 移動VWAP（常時表示）
 	sections.push("");
 	sections.push(`**💧 移動VWAP（${vwapAnalysis.movingVWAP.config.period}日）:**`);
@@ -352,21 +361,29 @@ export function generateJapaneseReport(
 	sections.push(`- MVWAP: ${formatCurrency(movingVwap.vwap)}`);
 	sections.push(`- 上部バンド(+${movingVwap.config.sigma}σ): ${formatCurrency(movingVwap.upperBand)}`);
 	sections.push(`- 下部バンド(-${movingVwap.config.sigma}σ): ${formatCurrency(movingVwap.lowerBand)}`);
-	sections.push(`- データソース: 日足データ`);
+	sections.push("- データソース: 日足データ");
 	sections.push(`- 価格位置: ${getJapaneseSignal("position", movingVwap.position)}`);
 	sections.push(`- シグナル強度: ${getJapaneseSignal("strength", movingVwap.strength)}`);
 	sections.push(`- トレンド: ${getJapaneseSignal("trend", movingVwap.trend)}`);
-	
+
 	// 推奨VWAP・統合分析
 	sections.push("");
 	sections.push("**📊 VWAP統合分析:**");
-	sections.push(`- 推奨指標: ${vwapAnalysis.recommendedVWAP === 'daily' ? '🌟 真の1日VWAP' : vwapAnalysis.recommendedVWAP === 'both' ? '🌟 両方参照' : '📈 移動VWAP'}`);
-	sections.push(`- 分析信頼性: ${vwapAnalysis.analysis.reliability === 'high' ? '🟢 高' : vwapAnalysis.analysis.reliability === 'medium' ? '🟡 中' : '🔴 低'}`);
+	sections.push(
+		`- 推奨指標: ${vwapAnalysis.recommendedVWAP === "daily" ? "🌟 真の1日VWAP" : vwapAnalysis.recommendedVWAP === "both" ? "🌟 両方参照" : "📈 移動VWAP"}`,
+	);
+	sections.push(
+		`- 分析信頼性: ${vwapAnalysis.analysis.reliability === "high" ? "🟢 高" : vwapAnalysis.analysis.reliability === "medium" ? "🟡 中" : "🔴 低"}`,
+	);
 	sections.push(`- トレーディングシグナル: ${getJapaneseSignal("trend", vwapAnalysis.analysis.tradingSignal)}`);
-	
+
 	if (vwapAnalysis.analysis.convergence) {
-		const convergence = vwapAnalysis.analysis.convergence === 'aligned' ? '🎯 一致' : 
-						   vwapAnalysis.analysis.convergence === 'converging' ? '🔄 収束中' : '🔀 発散中';
+		const convergence =
+			vwapAnalysis.analysis.convergence === "aligned"
+				? "🎯 一致"
+				: vwapAnalysis.analysis.convergence === "converging"
+					? "🔄 収束中"
+					: "🔀 発散中";
 		sections.push(`- VWAP収束性: ${convergence}`);
 	}
 

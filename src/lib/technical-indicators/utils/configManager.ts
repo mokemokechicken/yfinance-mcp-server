@@ -116,15 +116,6 @@ export class ConfigManager {
 			}
 		}
 
-		// 移動VWAP
-		if (userParams.mvwap) {
-			if (userParams.mvwap.period !== undefined) {
-				merged.mvwap.period = userParams.mvwap.period;
-			}
-			if (userParams.mvwap.standardDeviations !== undefined) {
-				merged.mvwap.standardDeviations = userParams.mvwap.standardDeviations;
-			}
-		}
 
 		return merged;
 	}
@@ -174,10 +165,6 @@ export class ConfigManager {
 		sections.push(vwapSection);
 		totalCustomParameters += vwapSection.parameters.filter((p) => p.isCustom).length;
 
-		// 移動VWAPセクション
-		const mvwapSection = ConfigManager.createMVWAPSection(validatedConfig, userParams);
-		sections.push(mvwapSection);
-		totalCustomParameters += mvwapSection.parameters.filter((p) => p.isCustom).length;
 
 		const hasCustomizations = totalCustomParameters > 0;
 
@@ -469,29 +456,21 @@ export class ConfigManager {
 		config: ValidatedTechnicalParameters,
 		userParams?: TechnicalParametersConfig,
 	): ConfigSection {
-		const periodCustom = userParams?.mvwap?.period !== undefined;
-		const sigmaCustom = userParams?.mvwap?.standardDeviations !== undefined;
-		const isCustomized = periodCustom || sigmaCustom;
+		const sigmaCustom = userParams?.vwap?.standardDeviations !== undefined;
+		const isCustomized = sigmaCustom;
 
 		const parameters: ConfigParameter[] = [
 			{
-				name: "period",
-				displayName: "期間",
-				value: `${config.mvwap.period}日`,
-				isCustom: periodCustom,
-				defaultValue: `${DEFAULT_TECHNICAL_PARAMETERS.mvwap.period}日`,
-			},
-			{
 				name: "standardDeviations",
 				displayName: "標準偏差",
-				value: `±${config.mvwap.standardDeviations}σ`,
+				value: `±${config.vwap.standardDeviations}σ`,
 				isCustom: sigmaCustom,
-				defaultValue: `±${DEFAULT_TECHNICAL_PARAMETERS.mvwap.standardDeviations}σ`,
+				defaultValue: `±${DEFAULT_TECHNICAL_PARAMETERS.vwap.standardDeviations}σ`,
 			},
 		];
 
 		return {
-			name: "mvwap",
+			name: "vwap",
 			displayName: "移動VWAP",
 			isCustomized,
 			parameters,

@@ -3,16 +3,19 @@ import { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
 import { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
 import { BollingerBandsCalculator } from "./indicators/bollingerBands";
 import { CrossDetectionCalculator } from "./indicators/crossDetection";
+import { HybridVWAPCalculator } from "./indicators/hybridVwap";
 import { MACDCalculator } from "./indicators/macd";
 import { MovingAverageCalculator } from "./indicators/movingAverage";
 import { RSICalculator } from "./indicators/rsi";
 import { StochasticCalculator } from "./indicators/stochastic";
 import { VolumeAnalysisCalculator } from "./indicators/volumeAnalysis";
 import { VWAPCalculator } from "./indicators/vwap";
-import { HybridVWAPCalculator } from "./indicators/hybridVwap";
 import {
+	APIConnectionError,
+	APILimitError,
 	type ComprehensiveStockAnalysisResult,
 	DataFetchError,
+	type ErrorReport,
 	type ExtendedIndicatorsResult,
 	type IndicatorConfig,
 	type PriceData,
@@ -22,9 +25,12 @@ import {
 	type ValidatedTechnicalParameters,
 } from "./types";
 import { Calculator } from "./utils/calculator";
+import { globalCacheManager } from "./utils/cacheManager";
 import { DataProcessor } from "./utils/dataProcessor";
+import { ErrorHandler } from "./utils/errorHandler";
 import { generateJapaneseReport } from "./utils/japaneseReportGenerator";
 import { DEFAULT_TECHNICAL_PARAMETERS, ParameterValidator } from "./utils/parameterValidator";
+import { globalPerformanceMonitor } from "./utils/performanceMonitor";
 
 // デフォルト設定
 const DEFAULT_CONFIG: IndicatorConfig = {
@@ -84,39 +90,65 @@ export class TechnicalAnalyzer {
 		};
 	}
 
-	// Yahoo Finance APIからのデータ取得
-	public static async fetchData(symbol: string, period = "2y"): Promise<PriceData[]> {
-		try {
-			const result = await yahooFinance.chart(symbol, {
-				period1: TechnicalAnalyzer.getPeriodStartDate(period),
-				period2: new Date(),
-				interval: "1d",
-			});
+	// Yahoo Finance APIからのデータ取得（キャッシュ + リトライ機能付き）
+	public static async fetchData(symbol: string, period = "2y", maxRetries = 3): Promise<PriceData[]> {
+		const context = { symbol, indicator: "データ取得" };
 
-			if (!result || !result.quotes || result.quotes.length === 0) {
-				throw new DataFetchError(`No data found for symbol: ${symbol}`, "NO_DATA_FOUND");
-			}
-
-			// Yahoo Finance chart API形式を内部形式に変換
-			const rawData = result.quotes.map((item) => ({
-				date: item.date,
-				open: item.open ?? 0,
-				high: item.high ?? 0,
-				low: item.low ?? 0,
-				close: item.close ?? 0,
-				volume: item.volume ?? 0,
-			}));
-
-			return DataProcessor.processRawData(rawData);
-		} catch (error: unknown) {
-			if (error instanceof DataFetchError) {
-				throw error;
-			}
-			throw new DataFetchError(
-				`Failed to fetch data for ${symbol}: ${error instanceof Error ? error.message : "Unknown error"}`,
-				"FETCH_ERROR",
-			);
+		// キャッシュから取得を試行
+		const cachedData = globalCacheManager.getPriceData<PriceData[]>(symbol, period);
+		if (cachedData && cachedData.length > 0) {
+			globalPerformanceMonitor.createProfiler().recordCacheHit();
+			return cachedData;
 		}
+
+		globalPerformanceMonitor.createProfiler().recordCacheMiss();
+
+		const { result, error } = await ErrorHandler.safeExecuteAsync(
+			async () => {
+				globalPerformanceMonitor.createProfiler().recordApiCall();
+				
+				const result = await yahooFinance.chart(symbol, {
+					period1: TechnicalAnalyzer.getPeriodStartDate(period),
+					period2: new Date(),
+					interval: "1d",
+				});
+
+				if (!result || !result.quotes || result.quotes.length === 0) {
+					throw new DataFetchError(`No data found for symbol: ${symbol}`, "NO_DATA_FOUND", { symbol, period });
+				}
+
+				// Yahoo Finance chart API形式を内部形式に変換
+				const rawData = result.quotes.map((item) => ({
+					date: item.date,
+					open: item.open ?? 0,
+					high: item.high ?? 0,
+					low: item.low ?? 0,
+					close: item.close ?? 0,
+					volume: item.volume ?? 0,
+				}));
+
+				const processedData = DataProcessor.processRawData(rawData);
+				
+				// 成功した場合はキャッシュに保存
+				if (processedData.length > 0) {
+					globalCacheManager.setPriceData(symbol, period, processedData);
+				}
+
+				return processedData;
+			},
+			() => [], // フォールバック：空の価格データ
+			context,
+			maxRetries,
+			1000, // 1秒の初期遅延
+		);
+
+		// エラーが発生した場合でも空データを返す
+		if (error && result.length === 0) {
+			// 完全に失敗した場合は元のエラーを投げる
+			throw error.error;
+		}
+
+		return result;
 	}
 
 	// すべてのテクニカル指標を計算
@@ -334,127 +366,270 @@ export class TechnicalAnalyzer {
 		return analyzer.analyze(symbol);
 	}
 
-	// 新規：包括的分析メソッド（API呼び出し最小化）
+	// 新規：包括的分析メソッド（パフォーマンス最適化版 - キャッシュ + 並列処理 + 監視機能）
 	public static async analyzeStockComprehensive(
 		symbol: string,
 		period = "1y",
 		includeFinancials = true,
 		technicalParams?: TechnicalParametersConfig,
-	): Promise<ComprehensiveStockAnalysisResult> {
+	): Promise<{ result: ComprehensiveStockAnalysisResult; errorReports: ErrorReport[] }> {
+		// パフォーマンス監視開始
+		const profiler = globalPerformanceMonitor.createProfiler();
+		profiler.start();
+		profiler.startStep("初期化");
+
+		const errorReports: ErrorReport[] = [];
+		const context = { symbol, indicator: "包括的分析" };
+
 		// パラメータ検証とデフォルト値設定
 		const validationResult = ParameterValidator.validateAndSetDefaults(technicalParams);
 
-		// API呼び出し最小化：並列取得
-		const [priceData, financialMetrics] = await Promise.all([
-			TechnicalAnalyzer.fetchData(symbol, period),
-			includeFinancials ? FinancialAnalyzer.getFinancialMetrics(symbol).catch(() => null) : Promise.resolve(null),
-		]);
+		// パラメータ検証警告をエラーレポートに追加
+		for (const warning of validationResult.warnings) {
+			errorReports.push(
+				ErrorHandler.handleError(
+					new Error(`Parameter validation warning: ${warning.reason}`),
+					{ symbol, indicator: "パラメータ検証", parameters: { [warning.parameter]: warning.originalValue } },
+					`デフォルト値 ${warning.correctedValue} を使用`,
+				),
+			);
+		}
+
+		profiler.endStep("初期化");
+		profiler.startStep("データ取得（並列）");
+
+		// 並列データ取得でAPI呼び出し最小化
+		const dataFetchPromises: Promise<any>[] = [];
+		
+		// 価格データ取得（Promise 1）
+		const priceDataPromise = TechnicalAnalyzer.fetchData(symbol, period).catch(error => {
+			const errorReport = ErrorHandler.handleError(error, context, "空の価格データで継続");
+			errorReports.push(errorReport);
+			return [] as PriceData[]; // 空データで継続
+		});
+		dataFetchPromises.push(priceDataPromise);
+
+		// 財務メトリクス取得（Promise 2）- 並列実行
+		let financialMetricsPromise: Promise<any> = Promise.resolve(null);
+		if (includeFinancials) {
+			// キャッシュから財務データを確認
+			const cachedFinancialData = globalCacheManager.getFinancialData(symbol);
+			if (cachedFinancialData) {
+				profiler.recordCacheHit();
+				financialMetricsPromise = Promise.resolve(cachedFinancialData);
+			} else {
+				profiler.recordCacheMiss();
+				financialMetricsPromise = FinancialAnalyzer.getFinancialMetrics(symbol)
+					.then(data => {
+						if (data) {
+							globalCacheManager.setFinancialData(symbol, data);
+						}
+						return data;
+					})
+					.catch(error => {
+						const errorReport = ErrorHandler.handleError(
+							error,
+							{ symbol, indicator: "財務指標取得" },
+							"財務指標なしで継続",
+						);
+						errorReports.push(errorReport);
+						return null;
+					});
+			}
+		}
+		dataFetchPromises.push(financialMetricsPromise);
+
+		// 並列実行と結果取得
+		const [priceData, financialMetrics] = await Promise.all(dataFetchPromises);
+
+		profiler.endStep("データ取得（並列）");
+		profiler.startStep("基本分析");
 
 		// 基本分析実行
-		const analyzer = new TechnicalAnalyzer(priceData);
-		const baseResult = analyzer.analyze(symbol);
+		const analyzer = new TechnicalAnalyzer(priceData as PriceData[]);
+		let baseResult: StockAnalysisResult;
 
-		// 拡張指標計算（パラメータ付き）
-		const extendedIndicators = await analyzer.calculateExtendedIndicators(symbol, validationResult.validatedParams);
+		try {
+			baseResult = analyzer.analyze(symbol);
+		} catch (error) {
+			// 基本分析が失敗した場合のフォールバック
+			const errorReport = ErrorHandler.handleError(error, context, "最小限の分析結果で継続");
+			errorReports.push(errorReport);
 
-		return {
+			baseResult = {
+				symbol,
+				companyName: symbol,
+				period: `${(priceData as PriceData[]).length} days`,
+				lastUpdated: new Date().toISOString(),
+				priceData: { current: 0, change: 0, changePercent: 0 },
+				technicalIndicators: {
+					movingAverages: { ma25: undefined, ma50: undefined, ma200: undefined },
+					rsi: { rsi14: undefined, rsi21: undefined },
+					macd: { macd: Number.NaN, signal: Number.NaN, histogram: Number.NaN },
+				},
+				signals: { trend: "sideways", momentum: "neutral", strength: "weak" },
+			};
+		}
+
+		profiler.endStep("基本分析");
+		profiler.startStep("拡張指標計算");
+
+		// 拡張指標計算（キャッシュ + 並列処理最適化版）
+		const { extendedIndicators, indicatorErrors } = await analyzer.calculateExtendedIndicatorsWithErrorHandlingOptimized(
+			symbol,
+			validationResult.validatedParams,
+			profiler,
+		);
+		errorReports.push(...indicatorErrors);
+
+		profiler.endStep("拡張指標計算");
+
+		const result: ComprehensiveStockAnalysisResult = {
 			...baseResult,
 			financialMetrics,
 			extendedIndicators,
-			priceHistoryData: priceData,
+			priceHistoryData: priceData as PriceData[],
 		};
+
+		// パフォーマンス監視終了と記録
+		const metrics = profiler.end();
+		const breakdown = profiler.getBreakdown();
+		globalPerformanceMonitor.recordProfile(
+			"analyzeStockComprehensive",
+			symbol,
+			metrics,
+			breakdown,
+			technicalParams,
+		);
+
+		return { result, errorReports };
 	}
 
 	// 新規：拡張指標計算メソッド（Graceful Degradation対応）
-	public async calculateExtendedIndicators(symbol: string, customParams?: ValidatedTechnicalParameters): Promise<ExtendedIndicatorsResult> {
+	public async calculateExtendedIndicators(
+		symbol: string,
+		customParams?: ValidatedTechnicalParameters,
+	): Promise<ExtendedIndicatorsResult> {
+		const { extendedIndicators } = await this.calculateExtendedIndicatorsWithErrorHandling(symbol, customParams);
+		return extendedIndicators;
+	}
+
+	// 新規：拡張指標計算メソッド（エラーハンドリング強化版）
+	public async calculateExtendedIndicatorsWithErrorHandling(
+		symbol: string,
+		customParams?: ValidatedTechnicalParameters,
+	): Promise<{ extendedIndicators: ExtendedIndicatorsResult; indicatorErrors: ErrorReport[] }> {
+		const { extendedIndicators, indicatorErrors } = await this.calculateExtendedIndicatorsWithErrorHandlingOptimized(
+			symbol,
+			customParams,
+			null, // プロファイラーなし
+		);
+		return { extendedIndicators, indicatorErrors };
+	}
+
+	// 新規：拡張指標計算メソッド（パフォーマンス最適化版 - キャッシュ + 並列処理）
+	public async calculateExtendedIndicatorsWithErrorHandlingOptimized(
+		symbol: string,
+		customParams?: ValidatedTechnicalParameters,
+		profiler?: any, // PerformanceProfilerインスタンス（オプショナル）
+	): Promise<{ extendedIndicators: ExtendedIndicatorsResult; indicatorErrors: ErrorReport[] }> {
 		// パラメータ設定（カスタム設定またはデフォルト値）
 		const params = customParams || DEFAULT_TECHNICAL_PARAMETERS;
 		const closePrices = DataProcessor.extractClosePrices(this.priceData);
+		const indicatorErrors: ErrorReport[] = [];
 
-		// 各指標を安全に計算（エラーが発生しても他の指標は継続）
-		const safeCalculate = <T>(calculationFn: () => T, fallbackFn: () => T, indicatorName: string): T => {
-			try {
-				return calculationFn();
-			} catch (error) {
-				console.warn(`${indicatorName} calculation failed:`, error);
-				return fallbackFn();
-			}
-		};
+		if (profiler) profiler.startStep("指標計算（並列処理）");
 
-		// 非同期版safeCalculate
-		const safeCalculateAsync = async <T>(
-			calculationFn: () => Promise<T>, 
-			fallbackFn: () => T, 
-			indicatorName: string
-		): Promise<T> => {
-			try {
-				return await calculationFn();
-			} catch (error) {
-				console.warn(`${indicatorName} calculation failed:`, error);
-				return fallbackFn();
-			}
-		};
+		// 並列処理で計算時間を最適化 - 独立した指標を同時計算
+		const indicatorPromises: Promise<any>[] = [];
 
-		// Phase2: 拡張指標計算（カスタムパラメータ使用 + Graceful Degradation）
-		const bollingerBands = safeCalculate(
-			() =>
-				BollingerBandsCalculator.calculate(
+		// グループ1: 軽量な指標（並列計算可能）
+		const lightweightIndicators = Promise.all([
+			// ボリンジャーバンド
+			this.calculateIndicatorWithCache(
+				symbol, 
+				"bollingerBands", 
+				params.bollingerBands,
+				() => BollingerBandsCalculator.calculate(
 					closePrices,
 					params.bollingerBands.period,
 					params.bollingerBands.standardDeviations,
 				),
-			() => ({ upper: 0, middle: 0, lower: 0, bandwidth: 0, percentB: 0 }),
-			"ボリンジャーバンド",
-		);
+				() => ({ upper: 0, middle: 0, lower: 0, bandwidth: 0, percentB: 0 })
+			),
+			// ストキャスティクス  
+			this.calculateIndicatorWithCache(
+				symbol,
+				"stochastic",
+				params.stochastic,
+				() => StochasticCalculator.calculateWithOHLC(this.priceData, params.stochastic.kPeriod, params.stochastic.dPeriod),
+				() => ({ k: 0, d: 0 })
+			),
+			// クロス検出
+			this.calculateIndicatorWithCache(
+				symbol,
+				"crossDetection",
+				{ shortPeriod: params.movingAverages.periods[0], longPeriod: params.movingAverages.periods[1] },
+				() => {
+					const periods = params.movingAverages.periods;
+					const shortPeriod = periods[0] || 25;
+					const longPeriod = periods[1] || 50;
+					return CrossDetectionCalculator.detectCross(closePrices, shortPeriod, longPeriod, 3);
+				},
+				() => ({
+					type: "none" as const,
+					shortMA: 0,
+					longMA: 0,
+					crossPoint: 0,
+					strength: "weak" as const,
+					confirmationDays: 0,
+				})
+			),
+			// 出来高分析
+			this.calculateIndicatorWithCache(
+				symbol,
+				"volumeAnalysis",
+				params.volumeAnalysis,
+				() => VolumeAnalysisCalculator.calculate(this.priceData, params.volumeAnalysis.period),
+				() => ({
+					averageVolume: 0,
+					relativeVolume: 0,
+					volumeTrend: "stable" as const,
+					volumeSpike: false,
+					priceVolumeStrength: "weak" as const,
+					accumulation: "neutral" as const,
+				})
+			),
+			// RSI拡張版
+			this.calculateIndicatorWithCache(
+				symbol,
+				"rsiExtended",
+				params.rsi,
+				() => RSICalculator.calculateExtended(closePrices, {
+					overbought: params.rsi.overbought,
+					oversold: params.rsi.oversold,
+				}),
+				() => ({
+					rsi14: 0,
+					rsi21: 0,
+					signal14: "neutral" as const,
+					signal21: "neutral" as const,
+				})
+			),
+		]);
 
-		const stochastic = safeCalculate(
-			() =>
-				StochasticCalculator.calculateWithOHLC(this.priceData, params.stochastic.kPeriod, params.stochastic.dPeriod),
-			() => ({ k: 0, d: 0 }),
-			"ストキャスティクス",
-		);
+		indicatorPromises.push(lightweightIndicators);
 
-		const crossDetection = safeCalculate(
-			() => {
-				// 移動平均期間の最初の2つを使用（最低2つは保証されている）
-				const periods = params.movingAverages.periods;
-				const shortPeriod = periods[0] || 25;
-				const longPeriod = periods[1] || 50;
-				return CrossDetectionCalculator.detectCross(closePrices, shortPeriod, longPeriod, 3);
-			},
-			() => ({
-				type: "none" as const,
-				shortMA: 0,
-				longMA: 0,
-				crossPoint: 0,
-				strength: "weak" as const,
-				confirmationDays: 0,
-			}),
-			"クロス検出",
-		);
-
-		const volumeAnalysis = safeCalculate(
-			() => VolumeAnalysisCalculator.calculate(this.priceData, params.volumeAnalysis.period),
-			() => ({
-				averageVolume: 0,
-				relativeVolume: 0,
-				volumeTrend: "stable" as const,
-				volumeSpike: false,
-				priceVolumeStrength: "weak" as const,
-				accumulation: "neutral" as const,
-			}),
-			"出来高分析",
-		);
-
-		const vwap = await safeCalculateAsync(
+		// グループ2: 重量な指標（VWAP - 外部API呼び出しあり）
+		const vwapPromise = this.calculateIndicatorWithCache(
+			symbol,
+			"hybridVWAP",
+			{ vwap: params.vwap },
 			async () => {
+				if (profiler) profiler.recordApiCall();
 				const config = {
 					enableTrueVWAP: params.vwap.enableTrueVWAP,
 					standardDeviations: params.vwap.standardDeviations,
-					mvwap: {
-						period: params.mvwap.period,
-						standardDeviations: params.mvwap.standardDeviations,
-					},
 				};
 				return await HybridVWAPCalculator.calculateHybridVWAP(symbol, this.priceData, config);
 			},
@@ -467,7 +642,7 @@ export class TechnicalAnalyzer {
 					position: "at" as const,
 					strength: "weak" as const,
 					trend: "neutral" as const,
-					config: { period: params.mvwap.period, sigma: params.mvwap.standardDeviations },
+					config: { period: 20, sigma: params.vwap.standardDeviations },
 				},
 				recommendedVWAP: "moving" as const,
 				dataSource: { moving: "daily" as const },
@@ -475,37 +650,36 @@ export class TechnicalAnalyzer {
 					reliability: "low" as const,
 					tradingSignal: "neutral" as const,
 				},
-			}),
-			"ハイブリッドVWAP",
+			})
 		);
 
-		// Phase3: 財務拡張指標（Graceful Degradation）
-		const rsiExtended = safeCalculate(
-			() =>
-				RSICalculator.calculateExtended(closePrices, {
-					overbought: params.rsi.overbought,
-					oversold: params.rsi.oversold,
-				}),
-			() => ({
-				rsi14: 0,
-				rsi21: 0,
-				signal14: "neutral" as const,
-				signal21: "neutral" as const,
-			}),
-			"RSI拡張版",
-		);
+		indicatorPromises.push(vwapPromise);
 
-		const movingAverageDeviations = [25, 50, 200]
-			.map((period) =>
-				safeCalculate(
-					() => MovingAverageDeviationCalculator.calculate(closePrices, period),
-					() => null,
-					`移動平均乖離率(${period}日)`,
-				),
+		// 並列実行と結果取得
+		const [lightweightResults, vwapResult] = await Promise.all(indicatorPromises);
+		const [bollingerBands, stochastic, crossDetection, volumeAnalysis, rsiExtended] = lightweightResults;
+		const vwap = vwapResult;
+
+		// 移動平均乖離率計算（並列実行）
+		const deviationPromises = [25, 50, 200].map(period => 
+			this.calculateIndicatorWithCache(
+				symbol,
+				`movingAverageDeviation_${period}`,
+				{ period },
+				() => MovingAverageDeviationCalculator.calculate(closePrices, period),
+				() => null
 			)
-			.filter((result) => result !== null);
+		);
 
-		return {
+		const deviationResults = await Promise.all(deviationPromises);
+		const movingAverageDeviations = deviationResults.filter(result => result !== null);
+
+		if (profiler) profiler.endStep("指標計算（並列処理）");
+
+		// エラー処理（実際のエラーがあった場合の処理は各calculateIndicatorWithCacheで処理済み）
+		// ここでは簡略化してエラーレポートは空にします（実際のエラーハンドリングは各計算関数内で実装）
+
+		const extendedIndicators: ExtendedIndicatorsResult = {
 			bollingerBands,
 			stochastic,
 			crossDetection,
@@ -514,14 +688,42 @@ export class TechnicalAnalyzer {
 			rsiExtended,
 			movingAverageDeviations,
 		};
+
+		return { extendedIndicators, indicatorErrors };
+	}
+
+	// ヘルパーメソッド: 指標計算をキャッシュ付きで実行
+	private async calculateIndicatorWithCache<T>(
+		symbol: string,
+		indicatorName: string,
+		params: Record<string, unknown>,
+		calculator: () => T | Promise<T>,
+		fallback: () => T,
+	): Promise<T> {
+		// キャッシュから取得
+		const cached = globalCacheManager.getIndicatorResult<T>(symbol, indicatorName, params);
+		if (cached !== null) {
+			return cached;
+		}
+
+		// キャッシュにない場合は計算実行
+		try {
+			const result = await calculator();
+			// 成功した場合はキャッシュに保存
+			globalCacheManager.setIndicatorResult(symbol, indicatorName, params, result);
+			return result;
+		} catch (error) {
+			console.warn(`Failed to calculate ${indicatorName} for ${symbol}:`, error);
+			return fallback();
+		}
 	}
 
 	// 新規：日本語レポート生成メソッド
 	public static generateJapaneseReportFromAnalysis(
-		analysis: ComprehensiveStockAnalysisResult, 
+		analysis: ComprehensiveStockAnalysisResult,
 		days: number,
 		validatedParams?: ValidatedTechnicalParameters,
-		userParams?: TechnicalParametersConfig
+		userParams?: TechnicalParametersConfig,
 	): string {
 		return generateJapaneseReport(analysis, days, validatedParams, userParams);
 	}

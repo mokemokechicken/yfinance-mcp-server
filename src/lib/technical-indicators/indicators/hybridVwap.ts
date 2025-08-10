@@ -26,11 +26,7 @@ export class HybridVWAPCalculator {
 		priceData: PriceData[],
 		config: VWAPConfig = {},
 	): Promise<VWAPAnalysisResult> {
-		const {
-			enableTrueVWAP = true,
-			standardDeviations = 1,
-			mvwap = { period: 20, standardDeviations: 1 },
-		} = config;
+		const { enableTrueVWAP = true, standardDeviations = 1, mvwap = { period: 20, standardDeviations: 1 } } = config;
 
 		// 移動VWAP計算（常時利用可能）
 		const movingVWAPResult = VWAPCalculator.calculate(
@@ -47,16 +43,12 @@ export class HybridVWAPCalculator {
 		};
 
 		let trueDailyVWAP: VWAPAnalysisResult["trueDailyVWAP"];
-		let dataSource: VWAPAnalysisResult["dataSource"] = { moving: "daily" };
+		const dataSource: VWAPAnalysisResult["dataSource"] = { moving: "daily" };
 
 		// 真の1日VWAP計算（設定が有効で利用可能な場合）
 		if (enableTrueVWAP) {
 			try {
-				const result = await TrueVWAPCalculator.calculateTrueDailyVWAP(
-					symbol,
-					new Date(),
-					standardDeviations,
-				);
+				const result = await TrueVWAPCalculator.calculateTrueDailyVWAP(symbol, new Date(), standardDeviations);
 
 				if (result) {
 					trueDailyVWAP = {
@@ -83,10 +75,10 @@ export class HybridVWAPCalculator {
 		}
 
 		// 推奨VWAP選択
-		const recommendedVWAP = this.selectRecommendedVWAP(trueDailyVWAP, movingVWAP);
+		const recommendedVWAP = HybridVWAPCalculator.selectRecommendedVWAP(trueDailyVWAP, movingVWAP);
 
 		// 分析データ生成
-		const analysis = this.generateAnalysis(trueDailyVWAP, movingVWAP, priceData);
+		const analysis = HybridVWAPCalculator.generateAnalysis(trueDailyVWAP, movingVWAP, priceData);
 
 		return {
 			trueDailyVWAP,
@@ -169,7 +161,7 @@ export class HybridVWAPCalculator {
 		}
 
 		// トレーディングシグナル統合
-		const tradingSignal = this.generateTradingSignal(dailyVWAP, movingVWAP, currentPrice);
+		const tradingSignal = HybridVWAPCalculator.generateTradingSignal(dailyVWAP, movingVWAP, currentPrice);
 
 		return {
 			convergence,

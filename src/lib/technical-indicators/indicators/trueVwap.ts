@@ -1,7 +1,7 @@
 import yahooFinance from "yahoo-finance2";
 import { CalculationError, type PriceData } from "../types";
-import type { VWAPResult } from "./vwap";
 import { Calculator } from "../utils/calculator";
+import type { VWAPResult } from "./vwap";
 
 export interface TrueVWAPResult extends VWAPResult {
 	dataSource: "15min" | "unavailable";
@@ -36,26 +36,26 @@ export class TrueVWAPCalculator {
 			const cacheKey = `${symbol}_${date.toISOString().split("T")[0]}_${standardDeviations}`;
 
 			// キャッシュチェック
-			const cached = this.cache.get(cacheKey);
-			if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+			const cached = TrueVWAPCalculator.cache.get(cacheKey);
+			if (cached && Date.now() - cached.timestamp < TrueVWAPCalculator.CACHE_TTL) {
 				return cached.data;
 			}
 
 			// 15分足データ取得
-			const intradayData = await this.fetch15MinData(symbol, date);
+			const intradayData = await TrueVWAPCalculator.fetch15MinData(symbol, date);
 			if (!intradayData || intradayData.length === 0) {
-				this.cache.set(cacheKey, { data: null, timestamp: Date.now() });
+				TrueVWAPCalculator.cache.set(cacheKey, { data: null, timestamp: Date.now() });
 				return null;
 			}
 
 			// データ品質チェック
-			const dataQuality = this.validateDataQuality(intradayData);
+			const dataQuality = TrueVWAPCalculator.validateDataQuality(intradayData);
 			if (dataQuality === "low") {
 				console.warn(`Low quality 15min data for ${symbol} on ${date.toISOString()}`);
 			}
 
 			// 真の1日VWAP計算
-			const vwapResult = this.calculateVWAPFromIntradayData(intradayData, standardDeviations);
+			const vwapResult = TrueVWAPCalculator.calculateVWAPFromIntradayData(intradayData, standardDeviations);
 
 			const result: TrueVWAPResult = {
 				...vwapResult,
@@ -66,7 +66,7 @@ export class TrueVWAPCalculator {
 			};
 
 			// キャッシュに保存
-			this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+			TrueVWAPCalculator.cache.set(cacheKey, { data: result, timestamp: Date.now() });
 			return result;
 		} catch (error) {
 			console.error(`Failed to calculate true daily VWAP for ${symbol}:`, error);
@@ -114,13 +114,13 @@ export class TrueVWAPCalculator {
 			const intradayData: IntradayData[] = result.quotes
 				.filter((quote) => quote.open && quote.high && quote.low && quote.close && quote.volume)
 				.map((quote) => ({
-					date: quote.date!,
-					datetime: quote.date!,
-					open: quote.open!,
-					high: quote.high!,
-					low: quote.low!,
-					close: quote.close!,
-					volume: quote.volume!,
+					date: quote.date as Date,
+					datetime: quote.date as Date,
+					open: quote.open as number,
+					high: quote.high as number,
+					low: quote.low as number,
+					close: quote.close as number,
+					volume: quote.volume as number,
 				}));
 
 			return intradayData;
@@ -188,7 +188,7 @@ export class TrueVWAPCalculator {
 		const vwap = totalVolumePrice / totalVolume;
 
 		// 標準偏差計算
-		const deviation = this.calculateVWAPStandardDeviation(data, vwap, totalVolume);
+		const deviation = TrueVWAPCalculator.calculateVWAPStandardDeviation(data, vwap, totalVolume);
 
 		// バンド計算
 		const upperBand = vwap + standardDeviations * deviation;
@@ -202,10 +202,10 @@ export class TrueVWAPCalculator {
 		else position = "at";
 
 		// シグナル強度計算
-		const strength = this.calculateSignalStrength(data, vwap);
+		const strength = TrueVWAPCalculator.calculateSignalStrength(data, vwap);
 
 		// トレンド計算
-		const trend = this.calculateTrend(data, vwap);
+		const trend = TrueVWAPCalculator.calculateTrend(data, vwap);
 
 		return {
 			vwap: Calculator.round(vwap, 2),
@@ -221,11 +221,7 @@ export class TrueVWAPCalculator {
 	/**
 	 * VWAP標準偏差計算（15分足版）
 	 */
-	private static calculateVWAPStandardDeviation(
-		data: IntradayData[],
-		vwap: number,
-		totalVolume: number,
-	): number {
+	private static calculateVWAPStandardDeviation(data: IntradayData[], vwap: number, totalVolume: number): number {
 		let varianceSum = 0;
 
 		for (const point of data) {
@@ -294,7 +290,7 @@ export class TrueVWAPCalculator {
 	 * キャッシュクリア（テスト用）
 	 */
 	public static clearCache(): void {
-		this.cache.clear();
+		TrueVWAPCalculator.cache.clear();
 	}
 
 	/**
@@ -325,7 +321,7 @@ export class TrueVWAPCalculator {
 
 		for (let i = 0; i < days; i++) {
 			const targetDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-			const result = await this.calculateTrueDailyVWAP(symbol, targetDate, standardDeviations);
+			const result = await TrueVWAPCalculator.calculateTrueDailyVWAP(symbol, targetDate, standardDeviations);
 			results.push(result);
 		}
 

@@ -38,10 +38,6 @@ export const DEFAULT_TECHNICAL_PARAMETERS: ValidatedTechnicalParameters = {
 		enableTrueVWAP: true,
 		standardDeviations: 1,
 	},
-	mvwap: {
-		period: 20,
-		standardDeviations: 1,
-	},
 };
 
 // パラメータ検証範囲設定
@@ -53,7 +49,6 @@ const VALIDATION_RULES = {
 	stochastic: { kMin: 1, kMax: 100, dMin: 1, dMax: 50, thresholdMin: 0, thresholdMax: 100 },
 	volumeAnalysis: { periodMin: 1, periodMax: 100, spikeMin: 1.0, spikeMax: 10.0 },
 	vwap: { sigmaMin: 0.1, sigmaMax: 5 },
-	mvwap: { periodMin: 1, periodMax: 100, sigmaMin: 0.1, sigmaMax: 5 },
 };
 
 export class ParameterValidator {
@@ -317,31 +312,6 @@ export class ParameterValidator {
 			}
 		}
 
-		// 移動VWAPパラメータの検証
-		if (params.mvwap) {
-			hasCustomSettings = true;
-			if (params.mvwap.period !== undefined) {
-				const validated = ParameterValidator.validateThreshold(
-					params.mvwap.period,
-					VALIDATION_RULES.mvwap.periodMin,
-					VALIDATION_RULES.mvwap.periodMax,
-					"mvwap.period",
-				);
-				validatedParams.mvwap.period = validated.value;
-				if (validated.warning) warnings.push(validated.warning);
-			}
-
-			if (params.mvwap.standardDeviations !== undefined) {
-				const validated = ParameterValidator.validateThreshold(
-					params.mvwap.standardDeviations,
-					VALIDATION_RULES.mvwap.sigmaMin,
-					VALIDATION_RULES.mvwap.sigmaMax,
-					"mvwap.standardDeviations",
-				);
-				validatedParams.mvwap.standardDeviations = validated.value;
-				if (validated.warning) warnings.push(validated.warning);
-			}
-		}
 
 		return {
 			validatedParams,
@@ -474,10 +444,6 @@ export class ParameterValidator {
 				break;
 			case "vwap":
 				if (param === "standardDeviations") return DEFAULT_TECHNICAL_PARAMETERS.vwap.standardDeviations;
-				break;
-			case "mvwap":
-				if (param === "period") return DEFAULT_TECHNICAL_PARAMETERS.mvwap.period;
-				if (param === "standardDeviations") return DEFAULT_TECHNICAL_PARAMETERS.mvwap.standardDeviations;
 				break;
 		}
 

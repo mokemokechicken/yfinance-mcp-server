@@ -89,14 +89,73 @@ export class TechnicalIndicatorError extends Error {
 	constructor(
 		message: string,
 		public code: string,
+		public context?: Record<string, unknown>,
+		public isRecoverable = true,
 	) {
 		super(message);
+		this.name = "TechnicalIndicatorError";
 	}
 }
 
-export class DataFetchError extends TechnicalIndicatorError {}
-export class CalculationError extends TechnicalIndicatorError {}
-export class ValidationError extends TechnicalIndicatorError {}
+export class DataFetchError extends TechnicalIndicatorError {
+	constructor(message: string, code: string, context?: Record<string, unknown>) {
+		super(message, code, context, true);
+		this.name = "DataFetchError";
+	}
+}
+
+export class CalculationError extends TechnicalIndicatorError {
+	constructor(message: string, code: string, context?: Record<string, unknown>) {
+		super(message, code, context, true);
+		this.name = "CalculationError";
+	}
+}
+
+export class ValidationError extends TechnicalIndicatorError {
+	constructor(message: string, code: string, context?: Record<string, unknown>) {
+		super(message, code, context, true);
+		this.name = "ValidationError";
+	}
+}
+
+// 新規：API固有エラー
+export class APIConnectionError extends DataFetchError {
+	constructor(message: string, context?: Record<string, unknown>) {
+		super(message, "API_CONNECTION_ERROR", context);
+		this.name = "APIConnectionError";
+		this.isRecoverable = false;
+	}
+}
+
+export class APILimitError extends DataFetchError {
+	constructor(message: string, context?: Record<string, unknown>) {
+		super(message, "API_LIMIT_ERROR", context);
+		this.name = "APILimitError";
+		this.isRecoverable = false;
+	}
+}
+
+// 新規：エラーコンテキスト情報
+export interface ErrorContext {
+	symbol?: string;
+	indicator?: string;
+	parameters?: Record<string, unknown>;
+	timestamp?: string;
+	retry?: {
+		attempt: number;
+		maxAttempts: number;
+	};
+	[key: string]: unknown;
+}
+
+// 新規：エラーレポート
+export interface ErrorReport {
+	error: TechnicalIndicatorError;
+	context: ErrorContext;
+	fallbackUsed?: string;
+	userMessage: string;
+	technicalDetails: string;
+}
 
 // 設定用の型
 export interface IndicatorConfig {
@@ -151,10 +210,7 @@ export interface TechnicalParametersConfig {
 		enableTrueVWAP?: boolean; // デフォルトtrue（15分足ベース）
 		standardDeviations?: number; // デフォルト1
 	};
-	mvwap?: {
-		period?: number; // デフォルト20（移動期間）
-		standardDeviations?: number; // デフォルト1
-	};
+	[key: string]: unknown;
 }
 
 // 検証済みパラメータ設定（内部処理用）
@@ -188,10 +244,6 @@ export interface ValidatedTechnicalParameters {
 	};
 	vwap: {
 		enableTrueVWAP: boolean;
-		standardDeviations: number;
-	};
-	mvwap: {
-		period: number;
 		standardDeviations: number;
 	};
 }

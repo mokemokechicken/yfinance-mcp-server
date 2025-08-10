@@ -9,7 +9,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 
 	describe("TechnicalAnalyzer.analyzeStockComprehensive", () => {
 		it("デフォルトパラメータでの包括的分析", { timeout }, async () => {
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true);
 			
 			// 基本構造の確認
 			assert.ok(result);
@@ -42,7 +42,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 				stochastic: { kPeriod: 10, dPeriod: 5, overbought: 85, oversold: 15 },
 			};
 
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, customParams);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, customParams);
 			
 			// 基本構造の確認
 			assert.ok(result);
@@ -65,7 +65,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 				// 他の設定はデフォルト値を使用
 			};
 
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, partialParams);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, partialParams);
 			
 			assert.ok(result);
 			assert.strictEqual(result.symbol, "AAPL");
@@ -82,7 +82,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 			};
 
 			// エラーが発生せずに結果が返されることを確認
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, invalidParams);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, invalidParams);
 			
 			assert.ok(result);
 			assert.strictEqual(result.symbol, "AAPL");
@@ -108,7 +108,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 
 	describe("日本語レポート生成", () => {
 		it("デフォルトパラメータでの日本語レポート生成", { timeout }, async () => {
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true);
 			const report = TechnicalAnalyzer.generateJapaneseReportFromAnalysis(result, 7);
 			
 			assert.ok(report);
@@ -128,7 +128,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 				macd: { fastPeriod: 8, slowPeriod: 21, signalPeriod: 5 },
 			};
 
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, customParams);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, customParams);
 			const { ParameterValidator } = await import("../src/lib/technical-indicators/utils/parameterValidator");
 			const validationResult = ParameterValidator.validateAndSetDefaults(customParams);
 			
@@ -201,7 +201,7 @@ describe("統合テスト（実際のAPI使用）", () => {
 				macd: { fastPeriod: 1, slowPeriod: 2, signalPeriod: 1 },
 			};
 
-			const result = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, extremeParams);
+			const { result } = await TechnicalAnalyzer.analyzeStockComprehensive("AAPL", "1y", true, extremeParams);
 			
 			// エラーが発生せず、結果が返されることを確認
 			assert.ok(result);
