@@ -1,4 +1,4 @@
-import yahooFinance from "yahoo-finance2";
+import yahooFinance from "../yahooFinanceClient";
 import { FinancialAnalyzer } from "./financial-indicators/FinancialAnalyzer";
 import { MovingAverageDeviationCalculator } from "./financial-indicators/MovingAverageDeviationCalculator";
 import type { FinancialMetricsResult } from "./financial-indicators/types";

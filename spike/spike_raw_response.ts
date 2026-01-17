@@ -1,10 +1,8 @@
 #!/usr/bin/env tsx
 
-import yahooFinance from "yahoo-finance2";
 import { TechnicalAnalyzer } from "../src/lib/technical-indicators";
-
-// Yahoo Finance APIの通知メッセージを抑制
-yahooFinance.suppressNotices(['yahooSurvey']);
+// Yahoo Finance インスタンスを初期化（通知抑制済み）
+import "../src/lib/yahooFinanceClient";
 
 /**
  * MCP toolのレスポンスをそのまま返すテストスクリプト

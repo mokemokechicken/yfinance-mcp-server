@@ -3,7 +3,7 @@
  * Yahoo Finance APIを使用して企業の財務指標を取得・計算
  */
 
-import yahooFinance from "yahoo-finance2";
+import yahooFinance from "../../yahooFinanceClient";
 import type { FINANCIAL_MODULES, FinancialDataError, FinancialMetricsResult, QuoteSummaryResult } from "./types.js";
 
 export class FinancialAnalyzer {

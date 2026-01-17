@@ -1,4 +1,4 @@
-import yahooFinance from "yahoo-finance2";
+import yahooFinance from "../../yahooFinanceClient";
 import { CalculationError, type PriceData } from "../types";
 import { Calculator } from "../utils/calculator";
 import type { VWAPResult } from "./vwap";
