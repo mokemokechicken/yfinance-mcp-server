@@ -30,6 +30,7 @@ This is an unofficial Yahoo Finance API MCP (Model Context Protocol) server that
 
 ## Project Architecture
 - **Entry Point**: `src/index.ts` contains the MCP server implementation with the main `getStockAnalysis` tool
+- **CLI Entry Point**: `src/cli.ts` provides a local command-line wrapper that reuses the same analysis pipeline
 - **Technical Indicators Library**: `src/lib/technical-indicators/` contains a comprehensive technical analysis system:
   - **Core Components**: `TechnicalAnalyzer` class for coordinated analysis with AI-friendly reporting
   - **Individual Indicators**: RSI (extended), MACD, Moving Averages, Bollinger Bands, Stochastic, VWAP, Volume Analysis, Cross Detection

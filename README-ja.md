@@ -53,6 +53,19 @@ claude mcp add yfinance npx @mokemokechicken/yfinance-mcp-server
 }
 ```
 
+## ローカルCLI
+
+MCP を使わずにローカルで分析する場合は CLI を使えます。
+
+```bash
+npm run cli -- AAPL
+npm run cli -- 6301.T --days 5
+npm run cli -- AAPL --technical-params '{"rsi":{"overbought":80}}'
+npm run cli -- AAPL --json
+```
+
+ビルド後は `yfinance-analyze` コマンドでも実行できます。
+
 ## 利用可能なツール
 
 ### getStockAnalysis

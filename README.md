@@ -53,6 +53,19 @@ Or manually add to your Claude Code MCP settings:
 }
 ```
 
+## Local CLI
+
+MCP を介さずにローカルで分析する場合は CLI を使えます。
+
+```bash
+npm run cli -- AAPL
+npm run cli -- 6301.T --days 5
+npm run cli -- AAPL --technical-params '{"rsi":{"overbought":80}}'
+npm run cli -- AAPL --json
+```
+
+ビルド後は `yfinance-analyze` コマンドとしても使えます。
+
 ## Available Tool
 
 ### getStockAnalysis

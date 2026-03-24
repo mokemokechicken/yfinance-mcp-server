@@ -3,9 +3,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { TechnicalAnalyzer } from "./lib/technical-indicators/technicalAnalyzer.js";
-// Yahoo Finance インスタンスを初期化（通知抑制済み）
-import "./lib/yahooFinanceClient.js";
+import { buildAnalysisReport } from "./lib/analysisRunner.js";
 
 const server = new McpServer({
 	name: "alt-yfinance",
@@ -78,38 +76,17 @@ server.tool(
 	},
 	async ({ symbol, days = 7, technicalParams }) => {
 		try {
-			// 包括的分析実行（API呼び出し最小化済み + エラーハンドリング強化）
-			const { result: analysisResult, errorReports } = await TechnicalAnalyzer.analyzeStockComprehensive(
+			const { report } = await buildAnalysisReport({
 				symbol,
-				"1y",
-				true,
-				technicalParams,
-			);
-
-			// パラメータ検証とデフォルト値設定（レポート生成用）
-			const { ParameterValidator } = await import("./lib/technical-indicators/utils/parameterValidator.js");
-			const validationResult = ParameterValidator.validateAndSetDefaults(technicalParams);
-
-			// 日本語レポート生成（パラメータ情報付き）
-			const report = TechnicalAnalyzer.generateJapaneseReportFromAnalysis(
-				analysisResult,
 				days,
-				validationResult.validatedParams,
 				technicalParams,
-			);
-
-			// エラーレポートがある場合の統合メッセージ生成
-			const { ErrorHandler } = await import("./lib/technical-indicators/utils/errorHandler.js");
-			const consolidatedErrorMessage = ErrorHandler.generateConsolidatedUserMessage(errorReports);
-
-			// 最終レポートにエラー情報を追加
-			const finalReport = consolidatedErrorMessage ? `${report}\n\n---\n\n${consolidatedErrorMessage}` : report;
+			});
 
 			return {
 				content: [
 					{
 						type: "text",
-						text: finalReport,
+						text: report,
 					},
 				],
 			};

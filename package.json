@@ -4,11 +4,13 @@
 	"description": "unofficial Yahoo Finance API MCP Server - A Model Context Protocol server implementation for Yahoo Finance API",
 	"main": "build/index.js",
 	"bin": {
-		"yfinance-mcp-server": "build/index.js"
+		"yfinance-mcp-server": "build/index.js",
+		"yfinance-analyze": "build/cli.js"
 	},
 	"scripts": {
 		"dev": "tsx --watch ./src/index.ts",
-		"build": "esbuild src/index.ts --minify --bundle --platform=node --format=esm --packages=external --outfile=build/index.js",
+		"cli": "tsx ./src/cli.ts",
+		"build": "esbuild src/index.ts src/cli.ts --minify --bundle --platform=node --format=esm --packages=external --outdir=build",
 		"test": "npx tsx --test --test-reporter dot tests",
 		"test:verbose": "find tests -name '*.test.ts' -exec npx tsx --test --test-reporter spec {} +",
 		"test:silent": "find tests -name '*.test.ts' -exec npx tsx --test --test-reporter dot {} + 2>&1 | grep -v 'calculation failed' || echo 'Tests completed'",
